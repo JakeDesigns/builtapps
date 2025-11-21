@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Property, Category } from '@/lib/types';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { MapCanvas } from '@/components/map/MapCanvas';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { PropertyDetailPanel } from '@/components/property/PropertyDetailPanel';
@@ -183,6 +184,7 @@ export default function HomePage() {
   const comparePropertiesList = properties.filter((p) => compareProperties.has(p.id));
 
   return (
+    <ProtectedRoute>
     <div className="relative w-full h-screen">
       {/* Error Display */}
       {error && (
@@ -382,6 +384,7 @@ export default function HomePage() {
         prefillAddress={prefillAddress}
       />
     </div>
+    </ProtectedRoute>
   );
 }
 
