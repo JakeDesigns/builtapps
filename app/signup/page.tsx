@@ -77,10 +77,17 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-12">
       <div className="max-w-md w-full space-y-8">
-        {/* Header */}
+        {/* Header with Logo */}
         <div className="text-center">
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/logo.png" 
+              alt="Company Logo" 
+              className="h-20 w-auto"
+            />
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
           <p className="mt-2 text-sm text-gray-600">
             Sign up to access the property listings
@@ -88,7 +95,7 @@ export default function SignUpPage() {
         </div>
 
         {/* Sign Up Form */}
-        <div className="bg-white py-8 px-6 shadow rounded-lg">
+        <div className="bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
           <form onSubmit={handleSignUp} className="space-y-6">
             {/* Email Field */}
             <div>
@@ -148,7 +155,7 @@ export default function SignUpPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
             >
               {loading ? 'Creating Account...' : 'Sign Up'}
             </Button>
