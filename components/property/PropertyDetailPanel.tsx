@@ -1103,7 +1103,9 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                               ? `${property.lot_width.toLocaleString()}' × ${property.lot_depth.toLocaleString()}'`
                               : property.lot_width
                               ? `Width: ${property.lot_width.toLocaleString()}'`
-                              : `Depth: ${property.lot_depth.toLocaleString()}'`}
+                              : property.lot_depth !== null && property.lot_depth !== undefined
+                              ? `Depth: ${property.lot_depth.toLocaleString()}'`
+                              : ''}
                           </p>
                         </div>
                       )}
