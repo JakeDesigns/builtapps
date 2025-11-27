@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Property, CATEGORY_LABELS, CATEGORY_COLORS, Category } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { X, Loader2, Pencil, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { X, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
@@ -39,10 +39,9 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [lastManuallyChanged, setLastManuallyChanged] = useState<'acres' | 'square_footage' | 'lot_dimensions' | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [lastManuallyChanged, setLastManuallyChanged] = useState<'acres' | 'square_footage' | null>(null);
+  const isCalculatingRef = useRef(false);
   
   // Form state for editing
   const [editForm, setEditForm] = useState({
@@ -64,13 +63,13 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
     lat: property.lat.toString(),
     lng: property.lng.toString(),
     // New listing fields
+    square_footage: property.square_footage?.toString() || '',
+    acres: property.acres !== null && property.acres !== undefined ? property.acres.toFixed(3) : '',
     lot_number: property.lot_number !== null && property.lot_number !== undefined ? String(property.lot_number) : '',
     lot_width: property.lot_width?.toString() || '',
     lot_depth: property.lot_depth?.toString() || '',
     lot_price: property.lot_price?.toString() || '',
     house_price: property.house_price?.toString() || '',
-    square_footage: property.square_footage?.toString() || '',
-    acres: property.acres?.toString() || '',
     garage_size_text: property.garage_size_text || '',
     lot_info: property.lot_info || [],
   });
@@ -98,19 +97,41 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
         lat: property.lat.toString(),
         lng: property.lng.toString(),
         // New listing fields
+        square_footage: property.square_footage?.toString() || '',
+        acres: property.acres !== null && property.acres !== undefined ? property.acres.toFixed(3) : '',
         lot_number: property.lot_number !== null && property.lot_number !== undefined ? String(property.lot_number) : '',
         lot_width: property.lot_width?.toString() || '',
         lot_depth: property.lot_depth?.toString() || '',
         lot_price: property.lot_price?.toString() || '',
         house_price: property.house_price?.toString() || '',
-        square_footage: property.square_footage?.toString() || '',
-        acres: property.acres?.toString() || '',
         garage_size_text: property.garage_size_text || '',
         lot_info: property.lot_info || [],
       });
       setLastManuallyChanged(null);
     }
   }, [property, isEditMode]);
+
+  // Two-way conversion between Square Footage and Acres
+  useEffect(() => {
+    if (isEditMode && lastManuallyChanged && !isCalculatingRef.current) {
+      isCalculatingRef.current = true;
+      if (lastManuallyChanged === 'square_footage' && editForm.square_footage) {
+        const sqft = parseFloat(editForm.square_footage);
+        if (!isNaN(sqft) && sqft > 0) {
+          const calculatedAcres = (sqft / 43560).toFixed(3);
+          setEditForm(prev => ({ ...prev, acres: calculatedAcres }));
+        }
+      } else if (lastManuallyChanged === 'acres' && editForm.acres) {
+        const acres = parseFloat(editForm.acres);
+        if (!isNaN(acres) && acres > 0) {
+          const calculatedSqft = Math.round(acres * 43560).toString();
+          setEditForm(prev => ({ ...prev, square_footage: calculatedSqft }));
+        }
+      }
+      setLastManuallyChanged(null);
+      isCalculatingRef.current = false;
+    }
+  }, [editForm.square_footage, editForm.acres, lastManuallyChanged, isEditMode]);
 
   const handleCategoryChange = async (newCategory: Category) => {
     if (newCategory === currentCategory) return;
@@ -163,35 +184,7 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
     try {
       // Build update payload with proper number parsing
       // Ensure all string fields are converted to strings before trimming
-      const updateData: {
-        title: string;
-        category: Category;
-        address: string | null;
-        subdivision_phase: string | null;
-        lot: string | null;
-        block: string | null;
-        house_name: string | null;
-        size_sqft: number | null;
-        garage_size: number | null;
-        bedrooms: number | null;
-        baths: number | null;
-        depth: string | null;
-        width: string | null;
-        building_setbacks: string | null;
-        power_box_location: string | null;
-        lat: number;
-        lng: number;
-        // New listing fields
-        lot_number: string | number | null;
-        lot_width: number | null;
-        lot_depth: number | null;
-        lot_price: number | null;
-        house_price: number | null;
-        square_footage: number | null;
-        acres: number | null;
-        garage_size_text: string | number | null;
-        lot_info: string[] | null;
-      } = {
+      const updateData: any = {
         title: String(editForm.title || '').trim(),
         category: editForm.category,
         address: String(editForm.address || '').trim() || null,
@@ -210,6 +203,8 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
         lat: parseFloat(String(editForm.lat || '0')) || 0,
         lng: parseFloat(String(editForm.lng || '0')) || 0,
         // New listing fields
+        square_footage: editForm.square_footage && String(editForm.square_footage).trim() ? parseInt(String(editForm.square_footage).trim(), 10) : null,
+        acres: editForm.acres && String(editForm.acres).trim() ? parseFloat(String(editForm.acres).trim()) : null,
         lot_number: editForm.lot_number && String(editForm.lot_number).trim() 
           ? (isNaN(parseFloat(editForm.lot_number)) ? editForm.lot_number : parseFloat(editForm.lot_number))
           : null,
@@ -217,13 +212,11 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
         lot_depth: editForm.lot_depth && String(editForm.lot_depth).trim() ? parseFloat(String(editForm.lot_depth).trim()) : null,
         lot_price: editForm.lot_price && String(editForm.lot_price).trim() ? parseFloat(String(editForm.lot_price).trim()) : null,
         house_price: editForm.house_price && String(editForm.house_price).trim() ? parseFloat(String(editForm.house_price).trim()) : null,
-        square_footage: editForm.square_footage && String(editForm.square_footage).trim() ? parseInt(String(editForm.square_footage).trim(), 10) : null,
-        acres: editForm.acres && String(editForm.acres).trim() ? parseFloat(String(editForm.acres).trim()) : null,
         garage_size_text: editForm.garage_size_text && String(editForm.garage_size_text).trim()
           ? (isNaN(parseFloat(editForm.garage_size_text)) ? editForm.garage_size_text : parseFloat(editForm.garage_size_text))
           : null,
-        lot_info: editForm.lot_info && Array.isArray(editForm.lot_info) && editForm.lot_info.length > 0
-          ? editForm.lot_info.filter(line => line.trim().length > 0).map(line => line.trim())
+        lot_info: editForm.lot_info && editForm.lot_info.length > 0 
+          ? editForm.lot_info.filter((item: string) => item.trim().length > 0)
           : null,
       };
 
@@ -297,78 +290,20 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
       lat: property.lat.toString(),
       lng: property.lng.toString(),
       // New listing fields
+      square_footage: property.square_footage?.toString() || '',
+      acres: property.acres !== null && property.acres !== undefined ? property.acres.toFixed(3) : '',
       lot_number: property.lot_number !== null && property.lot_number !== undefined ? String(property.lot_number) : '',
       lot_width: property.lot_width?.toString() || '',
       lot_depth: property.lot_depth?.toString() || '',
       lot_price: property.lot_price?.toString() || '',
       house_price: property.house_price?.toString() || '',
-      square_footage: property.square_footage?.toString() || '',
-      acres: property.acres?.toString() || '',
       garage_size_text: property.garage_size_text || '',
       lot_info: property.lot_info || [],
     });
     setCurrentCategory(property.category);
     setIsEditMode(false);
     setUpdateError(null);
-    setShowDeleteConfirm(false);
     setLastManuallyChanged(null);
-  };
-
-  const handleDelete = async () => {
-    if (!showDeleteConfirm) {
-      setShowDeleteConfirm(true);
-      return;
-    }
-
-    setIsDeleting(true);
-    setUpdateError(null);
-
-    try {
-      const response = await fetch(`/api/properties/${property.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          is_deleted: true,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        console.error('API Error:', error);
-        const errorMessage = error.details 
-          ? `${error.error}: ${error.details}` 
-          : error.error || 'Failed to delete property';
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      
-      // Show success notification
-      setNotification({ type: 'success', message: 'Property deleted successfully!' });
-      setTimeout(() => setNotification(null), 2000);
-      
-      // Update parent component and close panel
-      if (onUpdate) {
-        onUpdate(data.property);
-      }
-      
-      // Close the panel after a short delay
-      setTimeout(() => {
-        onClose();
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Error deleting property:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete property';
-      setUpdateError(errorMessage);
-      setNotification({ type: 'error', message: errorMessage });
-      setTimeout(() => setNotification(null), 5000);
-      setShowDeleteConfirm(false);
-    } finally {
-      setIsDeleting(false);
-    }
   };
 
   return (
@@ -554,10 +489,10 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
           <div className="p-6 space-y-6">
             {isEditMode ? (
               <>
-                {/* Edit Mode Form */}
+                {/* Edit Mode Form - Reorganized to match image layout */}
                 <div className="space-y-4">
-                  {/* Basic Information */}
-                  <div className="space-y-4">
+                  {/* BASIC INFORMATION Section */}
+                  <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase">Basic Information</h3>
                     <div className="space-y-2">
                       <Label htmlFor="edit-address">Address</Label>
@@ -585,52 +520,8 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                     </div>
                   </div>
 
-                  {/* Lot Information Section */}
+                  {/* Property Details Section */}
                   <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase">Lot Information</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-lot">Lot</Label>
-                        <Input
-                          id="edit-lot"
-                          value={editForm.lot}
-                          onChange={(e) => setEditForm({ ...editForm, lot: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-block">Block</Label>
-                        <Input
-                          id="edit-block"
-                          value={editForm.block}
-                          onChange={(e) => setEditForm({ ...editForm, block: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Property Details */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase">Property Details</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-size">Size (sq ft)</Label>
-                        <Input
-                          id="edit-size"
-                          type="number"
-                          value={editForm.size_sqft}
-                          onChange={(e) => setEditForm({ ...editForm, size_sqft: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-garage">Garage Size</Label>
-                        <Input
-                          id="edit-garage"
-                          type="number"
-                          value={editForm.garage_size}
-                          onChange={(e) => setEditForm({ ...editForm, garage_size: e.target.value })}
-                        />
-                      </div>
-                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-bedrooms">Bedrooms</Label>
@@ -654,63 +545,36 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-depth">Depth</Label>
+                        <Label htmlFor="edit-garage">Garage Size</Label>
                         <Input
-                          id="edit-depth"
-                          value={editForm.depth}
-                          onChange={(e) => setEditForm({ ...editForm, depth: e.target.value })}
+                          id="edit-garage"
+                          type="number"
+                          value={editForm.garage_size}
+                          onChange={(e) => setEditForm({ ...editForm, garage_size: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-width">Width</Label>
+                        <Label htmlFor="edit-garage-type">Garage Type</Label>
                         <Input
-                          id="edit-width"
-                          value={editForm.width}
-                          onChange={(e) => setEditForm({ ...editForm, width: e.target.value })}
+                          id="edit-garage-type"
+                          value={editForm.garage_size_text}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const numValue = parseFloat(value);
+                            setEditForm({ 
+                              ...editForm, 
+                              garage_size_text: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
+                            });
+                          }}
+                          placeholder="e.g., '2-car' or '3'"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Additional Information */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase">Additional Information</h3>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-building-setbacks">Building Setbacks</Label>
-                      <Textarea
-                        id="edit-building-setbacks"
-                        value={editForm.building_setbacks}
-                        onChange={(e) => setEditForm({ ...editForm, building_setbacks: e.target.value })}
-                        rows={4}
-                        placeholder="Enter building setbacks information..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-power-box-location">Power Box Location</Label>
-                      <Input
-                        id="edit-power-box-location"
-                        value={editForm.power_box_location}
-                        onChange={(e) => setEditForm({ ...editForm, power_box_location: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Lot Information Section */}
+                  {/* LOT INFORMATION Section */}
                   <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase">Lot Information</h3>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-lot-number">Lot Number</Label>
-                      <Input
-                        id="edit-lot-number"
-                        value={editForm.lot_number}
-                        onChange={(e) => setEditForm({ ...editForm, lot_number: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Property Dimensions Section */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase">Property Dimensions</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-square-footage">Square Footage</Label>
@@ -719,35 +583,48 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                           type="number"
                           value={editForm.square_footage}
                           onChange={(e) => {
-                            const value = e.target.value;
-                            const newForm = { ...editForm, square_footage: value };
                             setLastManuallyChanged('square_footage');
-                            // Calculate acres from squareFootage (only if lot dimensions not set)
-                            if (newForm.lot_width && newForm.lot_depth) {
-                              // Use lot dimensions if available - don't override
-                              const width = parseFloat(newForm.lot_width) || 0;
-                              const depth = parseFloat(newForm.lot_depth) || 0;
-                              const squareFeet = width * depth;
-                              newForm.acres = (squareFeet / 43560).toFixed(3);
-                            } else if (value && !isNaN(parseFloat(value))) {
-                              // Calculate from squareFootage
-                              const sqft = parseFloat(value);
-                              newForm.acres = (sqft / 43560).toFixed(3);
-                            } else {
-                              // Clear acres if square_footage is cleared
-                              newForm.acres = '';
-                            }
-                            setEditForm(newForm);
+                            setEditForm({ ...editForm, square_footage: e.target.value });
                           }}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-garage-size-text">Garage Size (text)</Label>
+                        <Label htmlFor="edit-acres">Acres</Label>
                         <Input
-                          id="edit-garage-size-text"
-                          value={editForm.garage_size_text}
-                          onChange={(e) => setEditForm({ ...editForm, garage_size_text: e.target.value })}
-                          placeholder="e.g., '2-car' or '3'"
+                          id="edit-acres"
+                          type="number"
+                          step="0.001"
+                          value={editForm.acres}
+                          onChange={(e) => {
+                            setLastManuallyChanged('acres');
+                            setEditForm({ ...editForm, acres: e.target.value });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-lot-number">Lot #</Label>
+                        <Input
+                          id="edit-lot-number"
+                          value={editForm.lot_number}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const numValue = parseFloat(value);
+                            setEditForm({ 
+                              ...editForm, 
+                              lot_number: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
+                            });
+                          }}
+                          placeholder="Enter lot number (text or number)"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-block">Block</Label>
+                        <Input
+                          id="edit-block"
+                          value={editForm.block}
+                          onChange={(e) => setEditForm({ ...editForm, block: e.target.value })}
                         />
                       </div>
                     </div>
@@ -759,25 +636,7 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                           type="number"
                           step="0.01"
                           value={editForm.lot_width}
-                          onChange={(e) => {
-                            const newForm = { ...editForm, lot_width: e.target.value };
-                            setLastManuallyChanged('lot_dimensions');
-                            // Calculate acres if both width and depth are provided
-                            if (newForm.lot_width && newForm.lot_depth) {
-                              const width = parseFloat(newForm.lot_width) || 0;
-                              const depth = parseFloat(newForm.lot_depth) || 0;
-                              const squareFeet = width * depth;
-                              newForm.acres = (squareFeet / 43560).toFixed(3);
-                              newForm.square_footage = Math.round(squareFeet).toString();
-                            } else if (newForm.square_footage && lastManuallyChanged !== 'acres') {
-                              // Fall back to squareFootage calculation only if acres wasn't manually changed
-                              const sqft = parseFloat(newForm.square_footage) || 0;
-                              newForm.acres = (sqft / 43560).toFixed(3);
-                            } else if (!newForm.lot_width && !newForm.lot_depth) {
-                              newForm.acres = '';
-                            }
-                            setEditForm(newForm);
-                          }}
+                          onChange={(e) => setEditForm({ ...editForm, lot_width: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
@@ -787,71 +646,13 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                           type="number"
                           step="0.01"
                           value={editForm.lot_depth}
-                          onChange={(e) => {
-                            const newForm = { ...editForm, lot_depth: e.target.value };
-                            setLastManuallyChanged('lot_dimensions');
-                            // Calculate acres if both width and depth are provided
-                            if (newForm.lot_width && newForm.lot_depth) {
-                              const width = parseFloat(newForm.lot_width) || 0;
-                              const depth = parseFloat(newForm.lot_depth) || 0;
-                              const squareFeet = width * depth;
-                              newForm.acres = (squareFeet / 43560).toFixed(3);
-                              newForm.square_footage = Math.round(squareFeet).toString();
-                            } else if (newForm.square_footage && lastManuallyChanged !== 'acres') {
-                              // Fall back to squareFootage calculation only if acres wasn't manually changed
-                              const sqft = parseFloat(newForm.square_footage) || 0;
-                              newForm.acres = (sqft / 43560).toFixed(3);
-                            } else if (!newForm.lot_width && !newForm.lot_depth) {
-                              newForm.acres = '';
-                            }
-                            setEditForm(newForm);
-                          }}
+                          onChange={(e) => setEditForm({ ...editForm, lot_depth: e.target.value })}
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-acres">Acres</Label>
-                      <Input
-                        id="edit-acres"
-                        type="number"
-                        step="0.001"
-                        value={editForm.acres || ''}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            const newForm = { ...editForm, acres: value };
-                            setLastManuallyChanged('acres');
-                            // Calculate square_footage from acres (only if lot dimensions not set)
-                            if (newForm.lot_width && newForm.lot_depth) {
-                              // Use lot dimensions if available - don't override
-                              const width = parseFloat(newForm.lot_width) || 0;
-                              const depth = parseFloat(newForm.lot_depth) || 0;
-                              const squareFeet = width * depth;
-                              newForm.square_footage = Math.round(squareFeet).toString();
-                            } else if (value && !isNaN(parseFloat(value))) {
-                              // Calculate from acres
-                              const acres = parseFloat(value);
-                              const squareFeet = acres * 43560;
-                              newForm.square_footage = Math.round(squareFeet).toString();
-                            } else {
-                              // Clear square_footage if acres is cleared
-                              newForm.square_footage = '';
-                            }
-                            setEditForm(newForm);
-                          }}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        {editForm.lot_width && editForm.lot_depth
-                          ? 'Automatically calculated from lot width × lot depth'
-                          : editForm.acres && lastManuallyChanged === 'acres'
-                          ? 'Square footage will be calculated automatically'
-                          : editForm.square_footage && lastManuallyChanged === 'square_footage'
-                          ? 'Automatically calculated from square footage'
-                          : 'Enter acres or square footage to calculate the other'}
-                      </p>
-                    </div>
                   </div>
 
-                  {/* Pricing Section */}
+                  {/* PRICING Section */}
                   <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase">Pricing</h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -878,14 +679,27 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                     </div>
                   </div>
 
-                  {/* Lot Information Details */}
+                  {/* Building Setbacks Section */}
                   <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase">Lot Information Details</h3>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-building-setbacks">Building Setbacks</Label>
+                      <Textarea
+                        id="edit-building-setbacks"
+                        value={editForm.building_setbacks}
+                        onChange={(e) => setEditForm({ ...editForm, building_setbacks: e.target.value })}
+                        rows={4}
+                        placeholder="Enter building setbacks information..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Additional Information Section */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase">Additional Information</h3>
                     <div className="space-y-2">
                       <Label htmlFor="edit-lot-info">Lot Info</Label>
-                      
                       {/* Display existing bullet points */}
-                      {editForm.lot_info && Array.isArray(editForm.lot_info) && editForm.lot_info.length > 0 && (
+                      {editForm.lot_info && editForm.lot_info.length > 0 && (
                         <div className="space-y-2 mb-3">
                           {editForm.lot_info.map((item, index) => (
                             <div key={index} className="flex items-start gap-2 p-2 border rounded-md bg-gray-50">
@@ -912,7 +726,7 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                                   const updated = editForm.lot_info.filter((_, i) => i !== index);
                                   setEditForm({
                                     ...editForm,
-                                    lot_info: updated.length > 0 ? updated : [],
+                                    lot_info: updated,
                                   });
                                 }}
                               >
@@ -922,7 +736,6 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                           ))}
                         </div>
                       )}
-
                       {/* Add new bullet point button */}
                       <Button
                         type="button"
@@ -932,42 +745,35 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                         onClick={() => {
                           setEditForm({
                             ...editForm,
-                            lot_info: Array.isArray(editForm.lot_info) ? [...editForm.lot_info, ''] : [''],
+                            lot_info: [...(editForm.lot_info || []), ''],
                           });
                         }}
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         Add Bullet Point
                       </Button>
-
-                      {editForm.lot_info && Array.isArray(editForm.lot_info) && editForm.lot_info.filter(item => item.trim().length > 0).length > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          {editForm.lot_info.filter(item => item.trim().length > 0).length} item(s) will be saved
-                        </p>
-                      )}
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-lat">Latitude</Label>
-                      <Input
-                        id="edit-lat"
-                        type="number"
-                        step="0.000001"
-                        value={editForm.lat}
-                        onChange={(e) => setEditForm({ ...editForm, lat: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-lng">Longitude</Label>
-                      <Input
-                        id="edit-lng"
-                        type="number"
-                        step="0.000001"
-                        value={editForm.lng}
-                        onChange={(e) => setEditForm({ ...editForm, lng: e.target.value })}
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-lat">Latitude</Label>
+                        <Input
+                          id="edit-lat"
+                          type="number"
+                          step="0.000001"
+                          value={editForm.lat}
+                          onChange={(e) => setEditForm({ ...editForm, lat: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-lng">Longitude</Label>
+                        <Input
+                          id="edit-lng"
+                          type="number"
+                          step="0.000001"
+                          value={editForm.lng}
+                          onChange={(e) => setEditForm({ ...editForm, lng: e.target.value })}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -999,14 +805,6 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                         </p>
                       </div>
                     )}
-                    {property.square_footage && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Square Footage</p>
-                        <p className="text-base font-medium">
-                          {property.square_footage.toLocaleString()} sq ft
-                        </p>
-                      </div>
-                    )}
                     {property.bedrooms !== null && property.bedrooms !== undefined && (
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Bedrooms</p>
@@ -1027,41 +825,11 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                         </p>
                       </div>
                     )}
-                    {property.garage_size_text && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Garage Size</p>
-                        <p className="text-base font-medium">{property.garage_size_text}</p>
-                      </div>
-                    )}
-                    {property.lot_price && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Lot Price</p>
-                        <p className="text-base font-medium">
-                          ${property.lot_price.toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                    {property.house_price && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">House Price</p>
-                        <p className="text-base font-medium">
-                          ${property.house_price.toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                    {property.acres && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Acres</p>
-                        <p className="text-base font-medium">
-                          {property.acres.toFixed(4)} acres
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </div>
 
                 {/* Additional Information */}
-                {(property.subdivision_phase || property.lot || property.block || property.lot_number || property.house_name || property.depth || property.width || property.lot_width || property.lot_depth || property.building_setbacks || property.power_box_location || property.lot_info) && (
+                {(property.subdivision_phase || property.lot || property.block || property.house_name || property.depth || property.width || property.building_setbacks || property.power_box_location) && (
                   <div>
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
                       Additional Information
@@ -1082,30 +850,6 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                           </p>
                           <p className="text-base">
                             {[property.lot, property.block].filter(Boolean).join(' / ') || '—'}
-                          </p>
-                        </div>
-                      )}
-                      {property.lot_number && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Lot Number
-                          </p>
-                          <p className="text-base">{property.lot_number}</p>
-                        </div>
-                      )}
-                      {(property.lot_width || property.lot_depth) && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Lot Dimensions
-                          </p>
-                          <p className="text-base">
-                            {property.lot_width && property.lot_depth
-                              ? `${property.lot_width.toLocaleString()}' × ${property.lot_depth.toLocaleString()}'`
-                              : property.lot_width
-                              ? `Width: ${property.lot_width.toLocaleString()}'`
-                              : property.lot_depth !== null && property.lot_depth !== undefined
-                              ? `Depth: ${property.lot_depth.toLocaleString()}'`
-                              : ''}
                           </p>
                         </div>
                       )}
@@ -1133,18 +877,6 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                             Building Setbacks
                           </p>
                           <p className="text-base whitespace-pre-wrap">{property.building_setbacks}</p>
-                        </div>
-                      )}
-                      {property.lot_info && property.lot_info.length > 0 && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Lot Info
-                          </p>
-                          <ul className="text-base list-disc list-inside space-y-1">
-                            {property.lot_info.map((info, index) => (
-                              <li key={index}>{info}</li>
-                            ))}
-                          </ul>
                         </div>
                       )}
                       {property.power_box_location && (
@@ -1180,81 +912,31 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
           </div>
         </ScrollArea>
 
-        {/* Save/Cancel/Delete Buttons */}
+        {/* Save/Cancel Buttons */}
         {isEditMode && (
-          <div className="p-6 border-t bg-white space-y-3">
-            {showDeleteConfirm ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
-                  <p className="text-sm text-red-800">
-                    Are you sure you want to delete this property? This action can be undone later.
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowDeleteConfirm(false)}
-                    disabled={isDeleting}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="flex-1"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Deleting...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Confirm Delete
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isSaving || isDeleting}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDelete}
-                  disabled={isSaving || isDeleting}
-                  className="flex-shrink-0"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={isSaving || isDeleting}
-                  className="flex-1"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save'
-                  )}
-                </Button>
-              </div>
-            )}
+          <div className="p-6 border-t bg-white flex gap-3">
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isSaving}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex-1"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save'
+              )}
+            </Button>
           </div>
         )}
       </div>
