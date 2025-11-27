@@ -218,34 +218,43 @@ export function MapCanvas({
       tooltipContent.style.color = '#1f2937';
       tooltipContent.style.lineHeight = '1.4';
       
-      // Property name/title
-      const titleDiv = document.createElement('div');
-      titleDiv.textContent = property.title;
-      titleDiv.style.marginBottom = '4px';
-      titleDiv.style.fontWeight = '600';
-      tooltipContent.appendChild(titleDiv);
+      // Line 1: House Name
+      if (property.house_name) {
+        const houseNameDiv = document.createElement('div');
+        houseNameDiv.textContent = `* ${property.house_name}`;
+        houseNameDiv.style.marginBottom = '2px';
+        houseNameDiv.style.fontWeight = '600';
+        tooltipContent.appendChild(houseNameDiv);
+      }
       
-      // Build tooltip text: ${address} • Lot ${lotNumber} • Block ${block}
-      const tooltipParts: string[] = [];
-      
+      // Line 2: Address
       if (property.address) {
-        tooltipParts.push(property.address);
+        const addressDiv = document.createElement('div');
+        addressDiv.textContent = `* ${property.address}`;
+        addressDiv.style.marginBottom = '2px';
+        tooltipContent.appendChild(addressDiv);
       }
       
-      if (property.lot_number) {
-        tooltipParts.push(`Lot ${property.lot_number}`);
-      }
-      
-      if (property.block) {
-        tooltipParts.push(`Block ${property.block}`);
-      }
-      
-      if (tooltipParts.length > 0) {
-        const detailsDiv = document.createElement('div');
-        detailsDiv.textContent = tooltipParts.join(' • ');
-        detailsDiv.style.fontSize = '12px';
-        detailsDiv.style.color = '#6b7280';
-        tooltipContent.appendChild(detailsDiv);
+      // Line 3: Lot Number and Block on same row
+      if (property.lot_number || property.lot || property.block) {
+        const lotBlockDiv = document.createElement('div');
+        lotBlockDiv.style.display = 'flex';
+        lotBlockDiv.style.justifyContent = 'space-between';
+        lotBlockDiv.style.marginTop = '2px';
+        
+        if (property.lot_number || property.lot) {
+          const lotDiv = document.createElement('span');
+          lotDiv.textContent = `* Lot ${property.lot_number || property.lot}`;
+          lotBlockDiv.appendChild(lotDiv);
+        }
+        
+        if (property.block) {
+          const blockDiv = document.createElement('span');
+          blockDiv.textContent = `* Block ${property.block}`;
+          lotBlockDiv.appendChild(blockDiv);
+        }
+        
+        tooltipContent.appendChild(lotBlockDiv);
       }
 
       const tooltip = new mapboxgl.Popup({
