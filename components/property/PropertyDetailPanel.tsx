@@ -579,6 +579,18 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                           onChange={(e) => setEditForm({ ...editForm, house_name: e.target.value })}
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-square-footage-basic">Square Footage</Label>
+                        <Input
+                          id="edit-square-footage-basic"
+                          type="number"
+                          value={editForm.square_footage}
+                          onChange={(e) => {
+                            setLastManuallyChanged('square_footage');
+                            setEditForm({ ...editForm, square_footage: e.target.value });
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
 

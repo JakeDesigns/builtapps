@@ -438,6 +438,22 @@ export function PropertyForm({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="square_footage_basic">Square Footage</Label>
+            <Input
+              id="square_footage_basic"
+              type="number"
+              value={formData.square_footage || ''}
+              onChange={(e) => {
+                setLastManuallyChanged('square_footage');
+                setFormData({ 
+                  ...formData, 
+                  square_footage: e.target.value ? parseInt(e.target.value) : undefined 
+                });
+              }}
+            />
+          </div>
+
           {/* Property Details */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
