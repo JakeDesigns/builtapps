@@ -855,15 +855,30 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
             ) : (
               <>
                 {/* Read-Only Display */}
-                {/* Address Section */}
-                {property.address && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-2">
-                      Location
-                    </h3>
+                {/* Listing Details - Reorganized Structure */}
+                <div className="space-y-0">
+                  {/* Line 1: House Name */}
+                  {property.house_name && (
+                    <p className="text-base text-foreground font-medium">{property.house_name}</p>
+                  )}
+                  
+                  {/* Line 2: Address */}
+                  {property.address && (
                     <p className="text-base text-foreground">{property.address}</p>
-                  </div>
-                )}
+                  )}
+                  
+                  {/* Line 3: Lot Number and Block on same row, evenly spaced */}
+                  {(property.lot_number || property.block) && (
+                    <div className="flex justify-between">
+                      {property.lot_number && (
+                        <p className="text-base text-foreground">Lot {property.lot_number}</p>
+                      )}
+                      {property.block && (
+                        <p className="text-base text-foreground">Block {property.block}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Key Details Grid */}
                 <div>
@@ -903,7 +918,7 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                 </div>
 
                 {/* Additional Information */}
-                {(property.subdivision_phase || property.lot || property.block || property.house_name || property.depth || property.width || property.building_setbacks || property.power_box_location) && (
+                {(property.subdivision_phase || property.depth || property.width || property.building_setbacks || property.power_box_location) && (
                   <div>
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
                       Additional Information
@@ -915,24 +930,6 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                             Subdivision Phase
                           </p>
                           <p className="text-base">{property.subdivision_phase}</p>
-                        </div>
-                      )}
-                      {(property.lot || property.block) && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Lot / Block
-                          </p>
-                          <p className="text-base">
-                            {[property.lot, property.block].filter(Boolean).join(' / ') || '—'}
-                          </p>
-                        </div>
-                      )}
-                      {property.house_name && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            House Name
-                          </p>
-                          <p className="text-base">{property.house_name}</p>
                         </div>
                       )}
                       {(property.depth || property.width) && (
