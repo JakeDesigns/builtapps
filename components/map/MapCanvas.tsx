@@ -218,19 +218,27 @@ export function MapCanvas({
       tooltipContent.style.color = '#1f2937';
       tooltipContent.style.lineHeight = '1.4';
       
+      // Build tooltip text: ${address} • Lot ${lotNumber} • Block ${block}
+      const tooltipParts: string[] = [];
+      
+      if (property.address) {
+        tooltipParts.push(property.address);
+      }
+      
+      if (property.lot_number) {
+        tooltipParts.push(`Lot ${property.lot_number}`);
+      }
+      
+      if (property.block) {
+        tooltipParts.push(`Block ${property.block}`);
+      }
+      
       const titleDiv = document.createElement('div');
-      titleDiv.textContent = property.title;
-      titleDiv.style.marginBottom = property.lot ? '4px' : '0';
+      titleDiv.textContent = tooltipParts.length > 0 
+        ? tooltipParts.join(' • ')
+        : property.title; // Fallback to title if no fields available
       
       tooltipContent.appendChild(titleDiv);
-      
-      if (property.lot) {
-        const lotDiv = document.createElement('div');
-        lotDiv.textContent = `Lot: ${property.lot}`;
-        lotDiv.style.fontSize = '12px';
-        lotDiv.style.color = '#6b7280';
-        tooltipContent.appendChild(lotDiv);
-      }
 
       const tooltip = new mapboxgl.Popup({
         closeButton: false,
