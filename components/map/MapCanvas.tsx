@@ -218,6 +218,13 @@ export function MapCanvas({
       tooltipContent.style.color = '#1f2937';
       tooltipContent.style.lineHeight = '1.4';
       
+      // Property name/title
+      const titleDiv = document.createElement('div');
+      titleDiv.textContent = property.title;
+      titleDiv.style.marginBottom = '4px';
+      titleDiv.style.fontWeight = '600';
+      tooltipContent.appendChild(titleDiv);
+      
       // Build tooltip text: ${address} • Lot ${lotNumber} • Block ${block}
       const tooltipParts: string[] = [];
       
@@ -233,12 +240,13 @@ export function MapCanvas({
         tooltipParts.push(`Block ${property.block}`);
       }
       
-      const titleDiv = document.createElement('div');
-      titleDiv.textContent = tooltipParts.length > 0 
-        ? tooltipParts.join(' • ')
-        : property.title; // Fallback to title if no fields available
-      
-      tooltipContent.appendChild(titleDiv);
+      if (tooltipParts.length > 0) {
+        const detailsDiv = document.createElement('div');
+        detailsDiv.textContent = tooltipParts.join(' • ');
+        detailsDiv.style.fontSize = '12px';
+        detailsDiv.style.color = '#6b7280';
+        tooltipContent.appendChild(detailsDiv);
+      }
 
       const tooltip = new mapboxgl.Popup({
         closeButton: false,
