@@ -81,5 +81,46 @@ export interface PropertyFormData {
   lat: number;
   lng: number;
   category: Category;
+  // New listing fields
+  lot_number?: string | number;
+  lot_width?: number;
+  lot_depth?: number;
+  lot_price?: number;
+  house_price?: number;
+  square_footage?: number;
+  acres?: number;
+  garage_size_text?: string | number;
+  lot_info?: string[];
+}
+
+export interface UpdatePropertyData {
+  category?: Category;
+  title?: string;
+  subdivision_phase?: string | null;
+  lot?: string | null;
+  block?: string | null;
+  address?: string | null;
+  house_name?: string | null;
+  size_sqft?: number | null;
+  garage_size?: number | null;
+  bedrooms?: number | null;
+  baths?: number | null;
+  depth?: string | null;
+  width?: string | null;
+  building_setbacks?: string | null;
+  power_box_location?: string | null;
+  lat?: number;
+  lng?: number;
+  // New listing fields
+  lot_number?: string | number | null;
+  lot_width?: number | null;
+  lot_depth?: number | null;
+  lot_price?: number | null;
+  house_price?: number | null;
+  square_footage?: number | null;
+  acres?: number | null;
+  garage_size_text?: string | number | null;
+  lot_info?: string[] | null;
+  is_deleted?: boolean | null;
 }
 

@@ -39,6 +39,8 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [lastManuallyChanged, setLastManuallyChanged] = useState<'acres' | 'square_footage' | null>(null);
   const isCalculatingRef = useRef(false);
@@ -111,23 +113,37 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
     }
   }, [property, isEditMode]);
 
-  // Two-way conversion between Square Footage and Acres
+  // Two-way conversion between Square Footage (Feet) and Acres
   useEffect(() => {
     if (isEditMode && lastManuallyChanged && !isCalculatingRef.current) {
       isCalculatingRef.current = true;
-      if (lastManuallyChanged === 'square_footage' && editForm.square_footage) {
-        const sqft = parseFloat(editForm.square_footage);
-        if (!isNaN(sqft) && sqft > 0) {
-          const calculatedAcres = (sqft / 43560).toFixed(3);
-          setEditForm(prev => ({ ...prev, acres: calculatedAcres }));
+      
+      if (lastManuallyChanged === 'square_footage') {
+        const sqftValue = editForm.square_footage.trim();
+        if (sqftValue === '') {
+          // Clear acres when square footage is cleared
+          setEditForm(prev => ({ ...prev, acres: '' }));
+        } else {
+          const sqft = parseFloat(sqftValue);
+          if (!isNaN(sqft) && sqft > 0) {
+            const calculatedAcres = (sqft / 43560).toFixed(3);
+            setEditForm(prev => ({ ...prev, acres: calculatedAcres }));
+          }
         }
-      } else if (lastManuallyChanged === 'acres' && editForm.acres) {
-        const acres = parseFloat(editForm.acres);
-        if (!isNaN(acres) && acres > 0) {
-          const calculatedSqft = Math.round(acres * 43560).toString();
-          setEditForm(prev => ({ ...prev, square_footage: calculatedSqft }));
+      } else if (lastManuallyChanged === 'acres') {
+        const acresValue = editForm.acres.trim();
+        if (acresValue === '') {
+          // Clear square footage when acres is cleared
+          setEditForm(prev => ({ ...prev, square_footage: '' }));
+        } else {
+          const acres = parseFloat(acresValue);
+          if (!isNaN(acres) && acres > 0) {
+            const calculatedSqft = Math.round(acres * 43560).toString();
+            setEditForm(prev => ({ ...prev, square_footage: calculatedSqft }));
+          }
         }
       }
+      
       setLastManuallyChanged(null);
       isCalculatingRef.current = false;
     }
@@ -304,6 +320,50 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
     setIsEditMode(false);
     setUpdateError(null);
     setLastManuallyChanged(null);
+    setShowDeleteConfirm(false);
+  };
+
+  const handleDelete = async () => {
+    if (!showDeleteConfirm) {
+      setShowDeleteConfirm(true);
+      return;
+    }
+
+    setIsDeleting(true);
+    setUpdateError(null);
+
+    try {
+      const response = await fetch(`/api/properties/${property.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_deleted: true }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete property');
+      }
+
+      setNotification({ type: 'success', message: 'Property deleted successfully!' });
+      setTimeout(() => {
+        setNotification(null);
+        onClose(); // Close the panel
+        if (onUpdate) {
+          onUpdate({ ...property, is_deleted: true }); // Update parent state
+        }
+      }, 1500);
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete property';
+      setUpdateError(errorMessage);
+      setNotification({ type: 'error', message: errorMessage });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   return (
@@ -489,38 +549,40 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
           <div className="p-6 space-y-6">
             {isEditMode ? (
               <>
-                {/* Edit Mode Form - Reorganized to match image layout */}
-                <div className="space-y-4">
+                {/* Edit Mode Form - Reorganized to match image layout exactly */}
+                <div className="space-y-6">
                   {/* BASIC INFORMATION Section */}
                   <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase">Basic Information</h3>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-address">Address</Label>
-                      <Input
-                        id="edit-address"
-                        value={editForm.address}
-                        onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-subdivision">Subdivision Phase</Label>
-                      <Input
-                        id="edit-subdivision"
-                        value={editForm.subdivision_phase}
-                        onChange={(e) => setEditForm({ ...editForm, subdivision_phase: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-house-name">House Name</Label>
-                      <Input
-                        id="edit-house-name"
-                        value={editForm.house_name}
-                        onChange={(e) => setEditForm({ ...editForm, house_name: e.target.value })}
-                      />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-address">Address</Label>
+                        <Input
+                          id="edit-address"
+                          value={editForm.address}
+                          onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-subdivision">Subdivision Phase</Label>
+                        <Input
+                          id="edit-subdivision"
+                          value={editForm.subdivision_phase}
+                          onChange={(e) => setEditForm({ ...editForm, subdivision_phase: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-house-name">House Name</Label>
+                        <Input
+                          id="edit-house-name"
+                          value={editForm.house_name}
+                          onChange={(e) => setEditForm({ ...editForm, house_name: e.target.value })}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Property Details Section */}
+                  {/* Property Details - Bedrooms, Baths, Garage Size, Garage Type */}
                   <div className="space-y-4 pt-4 border-t">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -566,7 +628,7 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                               garage_size_text: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
                             });
                           }}
-                          placeholder="e.g., '2-car' or '3'"
+                          placeholder="text field"
                         />
                       </div>
                     </div>
@@ -577,9 +639,9 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase">Lot Information</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-square-footage">Square Footage</Label>
+                        <Label htmlFor="edit-feet">Feet</Label>
                         <Input
-                          id="edit-square-footage"
+                          id="edit-feet"
                           type="number"
                           value={editForm.square_footage}
                           onChange={(e) => {
@@ -616,7 +678,6 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                               lot_number: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
                             });
                           }}
-                          placeholder="Enter lot number (text or number)"
                         />
                       </div>
                       <div className="space-y-2">
@@ -696,83 +757,84 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                   {/* Additional Information Section */}
                   <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase">Additional Information</h3>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-lot-info">Lot Info</Label>
-                      {/* Display existing bullet points */}
-                      {editForm.lot_info && editForm.lot_info.length > 0 && (
-                        <div className="space-y-2 mb-3">
-                          {editForm.lot_info.map((item, index) => (
-                            <div key={index} className="flex items-start gap-2 p-2 border rounded-md bg-gray-50">
-                              <span className="text-muted-foreground mt-1">•</span>
-                              <Input
-                                value={item}
-                                onChange={(e) => {
-                                  const updated = [...editForm.lot_info];
-                                  updated[index] = e.target.value;
-                                  setEditForm({
-                                    ...editForm,
-                                    lot_info: updated,
-                                  });
-                                }}
-                                className="flex-1 bg-white"
-                                placeholder="Enter lot information..."
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => {
-                                  const updated = editForm.lot_info.filter((_, i) => i !== index);
-                                  setEditForm({
-                                    ...editForm,
-                                    lot_info: updated,
-                                  });
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {/* Add new bullet point button */}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          setEditForm({
-                            ...editForm,
-                            lot_info: [...(editForm.lot_info || []), ''],
-                          });
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Bullet Point
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-lat">Latitude</Label>
-                        <Input
-                          id="edit-lat"
-                          type="number"
-                          step="0.000001"
-                          value={editForm.lat}
-                          onChange={(e) => setEditForm({ ...editForm, lat: e.target.value })}
-                        />
+                        {/* Display existing bullet points */}
+                        {editForm.lot_info && editForm.lot_info.length > 0 && (
+                          <div className="space-y-2 mb-3">
+                            {editForm.lot_info.map((item, index) => (
+                              <div key={index} className="flex items-start gap-2 p-2 border rounded-md bg-gray-50">
+                                <span className="text-muted-foreground mt-1">•</span>
+                                <Input
+                                  value={item}
+                                  onChange={(e) => {
+                                    const updated = [...editForm.lot_info];
+                                    updated[index] = e.target.value;
+                                    setEditForm({
+                                      ...editForm,
+                                      lot_info: updated,
+                                    });
+                                  }}
+                                  className="flex-1 bg-white"
+                                  placeholder="Enter lot information..."
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    const updated = editForm.lot_info.filter((_, i) => i !== index);
+                                    setEditForm({
+                                      ...editForm,
+                                      lot_info: updated,
+                                    });
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {/* Add new bullet point button */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => {
+                            setEditForm({
+                              ...editForm,
+                              lot_info: [...(editForm.lot_info || []), ''],
+                            });
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Bullet Point
+                        </Button>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-lng">Longitude</Label>
-                        <Input
-                          id="edit-lng"
-                          type="number"
-                          step="0.000001"
-                          value={editForm.lng}
-                          onChange={(e) => setEditForm({ ...editForm, lng: e.target.value })}
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-lat">Latitude</Label>
+                          <Input
+                            id="edit-lat"
+                            type="number"
+                            step="0.000001"
+                            value={editForm.lat}
+                            onChange={(e) => setEditForm({ ...editForm, lat: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-lng">Longitude</Label>
+                          <Input
+                            id="edit-lng"
+                            type="number"
+                            step="0.000001"
+                            value={editForm.lng}
+                            onChange={(e) => setEditForm({ ...editForm, lng: e.target.value })}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -912,31 +974,80 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
           </div>
         </ScrollArea>
 
-        {/* Save/Cancel Buttons */}
+        {/* Save/Cancel/Delete Buttons */}
         {isEditMode && (
-          <div className="p-6 border-t bg-white flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isSaving}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="flex-1"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save'
-              )}
-            </Button>
+          <div className="p-6 border-t bg-white space-y-3">
+            {showDeleteConfirm ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-800">
+                    Are you sure you want to delete this property? This action can be undone later.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="flex-1"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Confirm Delete
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={isSaving}
+                  className="flex-1"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex-1"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save'
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

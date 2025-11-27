@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PropertyFormData, Category, CATEGORY_LABELS, CATEGORY_COLORS } from '@/lib/types';
+import { Plus, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +23,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SearchBar } from '@/components/controls/SearchBar';
-import { Plus, Trash2 } from 'lucide-react';
 
 interface PropertyFormProps {
   open: boolean;
@@ -77,19 +77,19 @@ export function PropertyForm({
     lng: 0,
     category: 'for_sale_completed',
     // New listing fields
-    lot_number: undefined,
+    square_footage: undefined,
+    acres: undefined,
+    lot_number: '',
     lot_width: undefined,
     lot_depth: undefined,
     lot_price: undefined,
     house_price: undefined,
-    square_footage: undefined,
-    acres: undefined,
-    garage_size_text: undefined,
-    lot_info: undefined,
-    is_deleted: false,
+    garage_size_text: '',
+    lot_info: [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [lastManuallyChanged, setLastManuallyChanged] = useState<'acres' | 'square_footage' | 'lot_dimensions' | null>(null);
+  const [lastManuallyChanged, setLastManuallyChanged] = useState<'acres' | 'square_footage' | null>(null);
+  const isCalculatingRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
@@ -113,16 +113,15 @@ export function PropertyForm({
         lng: 0,
         category: 'for_sale_completed',
         // New listing fields
-        lot_number: undefined,
+        square_footage: undefined,
+        acres: undefined,
+        lot_number: '',
         lot_width: undefined,
         lot_depth: undefined,
         lot_price: undefined,
         house_price: undefined,
-        square_footage: undefined,
-        acres: undefined,
-        garage_size_text: undefined,
-        lot_info: undefined,
-        is_deleted: false,
+        garage_size_text: '',
+        lot_info: [],
       });
       setLastManuallyChanged(null);
       // Turn off pin mode when form closes
@@ -139,6 +138,42 @@ export function PropertyForm({
       }));
     }
   }, [open, onPinModeChange, prefillAddress, tempMarkerPosition]);
+
+  // Two-way conversion between Square Footage (Feet) and Acres
+  useEffect(() => {
+    if (lastManuallyChanged && !isCalculatingRef.current) {
+      isCalculatingRef.current = true;
+      
+      if (lastManuallyChanged === 'square_footage') {
+        const sqftValue = formData.square_footage?.toString() || '';
+        if (sqftValue === '' || sqftValue === '0') {
+          // Clear acres when square footage is cleared
+          setFormData(prev => ({ ...prev, acres: undefined }));
+        } else {
+          const sqft = parseFloat(sqftValue);
+          if (!isNaN(sqft) && sqft > 0) {
+            const calculatedAcres = parseFloat((sqft / 43560).toFixed(3));
+            setFormData(prev => ({ ...prev, acres: calculatedAcres }));
+          }
+        }
+      } else if (lastManuallyChanged === 'acres') {
+        const acresValue = formData.acres?.toString() || '';
+        if (acresValue === '' || acresValue === '0') {
+          // Clear square footage when acres is cleared
+          setFormData(prev => ({ ...prev, square_footage: undefined }));
+        } else {
+          const acres = parseFloat(acresValue);
+          if (!isNaN(acres) && acres > 0) {
+            const calculatedSqft = Math.round(acres * 43560);
+            setFormData(prev => ({ ...prev, square_footage: calculatedSqft }));
+          }
+        }
+      }
+      
+      setLastManuallyChanged(null);
+      isCalculatingRef.current = false;
+    }
+  }, [formData.square_footage, formData.acres, lastManuallyChanged]);
 
   // Update form coordinates when temp marker position changes
   useEffect(() => {
@@ -175,22 +210,6 @@ export function PropertyForm({
       onCoordinatesUpdate(newFormData.lat, newFormData.lng);
     }
   };
-
-  // Calculate acres/square_footage automatically
-  // Priority: lot_width × lot_depth > manual acres/square_footage
-  useEffect(() => {
-    // If lot dimensions are provided, they take priority
-    if (formData.lot_width && formData.lot_depth && lastManuallyChanged !== 'acres' && lastManuallyChanged !== 'square_footage') {
-      const squareFeet = formData.lot_width * formData.lot_depth;
-      const acres = squareFeet / 43560;
-      setFormData(prev => ({
-        ...prev,
-        acres: parseFloat(acres.toFixed(3)),
-        square_footage: Math.round(squareFeet),
-      }));
-      setLastManuallyChanged('lot_dimensions');
-    }
-  }, [formData.lot_width, formData.lot_depth, lastManuallyChanged]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -382,90 +401,156 @@ export function PropertyForm({
             </Select>
           </div>
 
-          {/* Basic Information Section */}
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Basic Information</h3>
+          <div className="space-y-2">
+            <Label htmlFor="subdivision_phase">Subdivision Phase</Label>
+            <Input
+              id="subdivision_phase"
+              value={formData.subdivision_phase || ''}
+              onChange={(e) => setFormData({ ...formData, subdivision_phase: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="subdivision_phase">Subdivision Phase</Label>
+              <Label htmlFor="lot">Lot</Label>
               <Input
-                id="subdivision_phase"
-                value={formData.subdivision_phase || ''}
-                onChange={(e) => setFormData({ ...formData, subdivision_phase: e.target.value })}
+                id="lot"
+                value={formData.lot || ''}
+                onChange={(e) => setFormData({ ...formData, lot: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="house_name">House Name</Label>
+              <Label htmlFor="block">Block</Label>
               <Input
-                id="house_name"
-                value={formData.house_name || ''}
-                onChange={(e) => setFormData({ ...formData, house_name: e.target.value })}
+                id="block"
+                value={formData.block || ''}
+                onChange={(e) => setFormData({ ...formData, block: e.target.value })}
               />
             </div>
           </div>
 
-          {/* Lot Information Section */}
+          <div className="space-y-2">
+            <Label htmlFor="house_name">House Name</Label>
+            <Input
+              id="house_name"
+              value={formData.house_name || ''}
+              onChange={(e) => setFormData({ ...formData, house_name: e.target.value })}
+            />
+          </div>
+
+          {/* Property Details */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="bedrooms">Bedrooms</Label>
+              <Input
+                id="bedrooms"
+                type="number"
+                value={formData.bedrooms || ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    bedrooms: e.target.value ? parseInt(e.target.value) : undefined,
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="baths">Baths</Label>
+              <Input
+                id="baths"
+                type="number"
+                step="0.1"
+                value={formData.baths || ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    baths: e.target.value ? parseFloat(e.target.value) : undefined,
+                  })
+                }
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="garage_size">Garage Size</Label>
+              <Input
+                id="garage_size"
+                type="number"
+                value={formData.garage_size || ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    garage_size: e.target.value ? parseInt(e.target.value) : undefined,
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="garage_size_text">Garage Type</Label>
+              <Input
+                id="garage_size_text"
+                value={formData.garage_size_text || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const numValue = parseFloat(value);
+                  setFormData({ 
+                    ...formData, 
+                    garage_size_text: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
+                  });
+                }}
+                placeholder="text field"
+              />
+            </div>
+          </div>
+
+          {/* LOT INFORMATION Section */}
           <div className="space-y-4 pt-4 border-t">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase">Lot Information</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="lot">Lot</Label>
+                <Label htmlFor="square_footage">Feet</Label>
                 <Input
-                  id="lot"
-                  value={formData.lot || ''}
-                  onChange={(e) => setFormData({ ...formData, lot: e.target.value })}
+                  id="square_footage"
+                  type="number"
+                  value={formData.square_footage || ''}
+                  onChange={(e) => {
+                    setLastManuallyChanged('square_footage');
+                    setFormData({ 
+                      ...formData, 
+                      square_footage: e.target.value ? parseInt(e.target.value) : undefined 
+                    });
+                  }}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lot_number">Lot Number</Label>
+                <Label htmlFor="acres">Acres</Label>
                 <Input
-                  id="lot_number"
-                  value={formData.lot_number !== undefined && formData.lot_number !== null ? String(formData.lot_number) : ''}
+                  id="acres"
+                  type="number"
+                  step="0.001"
+                  value={formData.acres || ''}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    // Allow both string and number input
-                    const numValue = parseFloat(value);
+                    setLastManuallyChanged('acres');
                     setFormData({ 
                       ...formData, 
-                      lot_number: value === '' ? undefined : (isNaN(numValue) ? value : numValue)
+                      acres: e.target.value ? parseFloat(e.target.value) : undefined 
                     });
                   }}
-                  placeholder="Enter lot number (text or number)"
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="lot_width">Lot Width (feet)</Label>
+                <Label htmlFor="lot_number">Lot #</Label>
                 <Input
-                  id="lot_width"
-                  type="number"
-                  step="0.01"
-                  value={formData.lot_width || ''}
+                  id="lot_number"
+                  value={formData.lot_number || ''}
                   onChange={(e) => {
                     const value = e.target.value;
-                    const newWidth = value ? parseFloat(value) : undefined;
-                    setLastManuallyChanged('lot_dimensions');
-                    setFormData({
-                      ...formData,
-                      lot_width: newWidth,
-                    });
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lot_depth">Lot Depth (feet)</Label>
-                <Input
-                  id="lot_depth"
-                  type="number"
-                  step="0.01"
-                  value={formData.lot_depth || ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const newDepth = value ? parseFloat(value) : undefined;
-                    setLastManuallyChanged('lot_dimensions');
-                    setFormData({
-                      ...formData,
-                      lot_depth: newDepth,
+                    const numValue = parseFloat(value);
+                    setFormData({ 
+                      ...formData, 
+                      lot_number: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
                     });
                   }}
                 />
@@ -479,92 +564,41 @@ export function PropertyForm({
                 />
               </div>
             </div>
-          </div>
-
-          {/* Property Dimensions Section */}
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Property Dimensions</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="size_sqft">Size (square feet)</Label>
+                <Label htmlFor="lot_width">Lot Width (feet)</Label>
                 <Input
-                  id="size_sqft"
+                  id="lot_width"
                   type="number"
-                  value={formData.size_sqft || ''}
+                  step="0.01"
+                  value={formData.lot_width || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      size_sqft: e.target.value ? parseInt(e.target.value) : undefined,
+                      lot_width: e.target.value ? parseFloat(e.target.value) : undefined,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lot_depth">Lot Depth (feet)</Label>
+                <Input
+                  id="lot_depth"
+                  type="number"
+                  step="0.01"
+                  value={formData.lot_depth || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      lot_depth: e.target.value ? parseFloat(e.target.value) : undefined,
                     })
                   }
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="square_footage">Square Footage</Label>
-                <Input
-                  id="square_footage"
-                  type="number"
-                  value={formData.square_footage || ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const newSquareFootage = value ? parseInt(value) : undefined;
-                    setLastManuallyChanged('square_footage');
-                    // Calculate acres from square_footage (only if lot dimensions not set)
-                    let newAcres = undefined;
-                    if (newSquareFootage && !formData.lot_width && !formData.lot_depth) {
-                      newAcres = parseFloat((newSquareFootage / 43560).toFixed(3));
-                    } else if (!newSquareFootage) {
-                      newAcres = undefined;
-                    }
-                    setFormData({
-                      ...formData,
-                      square_footage: newSquareFootage,
-                      acres: newAcres !== undefined ? newAcres : formData.acres,
-                    });
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="acres">Acres</Label>
-                <Input
-                  id="acres"
-                  type="number"
-                  step="0.001"
-                  value={formData.acres !== undefined && formData.acres !== null ? formData.acres.toFixed(3) : ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const newAcres = value ? parseFloat(value) : undefined;
-                    setLastManuallyChanged('acres');
-                    // Calculate square_footage from acres (only if lot dimensions not set)
-                    let newSquareFootage = undefined;
-                    if (newAcres && !formData.lot_width && !formData.lot_depth) {
-                      newSquareFootage = Math.round(newAcres * 43560);
-                    } else if (!newAcres) {
-                      newSquareFootage = undefined;
-                    }
-                    setFormData({
-                      ...formData,
-                      acres: newAcres,
-                      square_footage: newSquareFootage !== undefined ? newSquareFootage : formData.square_footage,
-                    });
-                  }}
-                />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {formData.lot_width && formData.lot_depth
-                ? 'Automatically calculated from lot width × lot depth'
-                : formData.acres && lastManuallyChanged === 'acres'
-                ? 'Square footage will be calculated automatically'
-                : formData.square_footage && lastManuallyChanged === 'square_footage'
-                ? 'Automatically calculated from square footage'
-                : 'Enter acres or square footage to calculate the other'}
-            </p>
           </div>
 
-          {/* Pricing Section */}
+          {/* PRICING Section */}
           <div className="space-y-4 pt-4 border-t">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase">Pricing</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -601,121 +635,41 @@ export function PropertyForm({
             </div>
           </div>
 
-          {/* Property Details Section */}
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Property Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="bedrooms">Bedrooms</Label>
-                <Input
-                  id="bedrooms"
-                  type="number"
-                  value={formData.bedrooms || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      bedrooms: e.target.value ? parseInt(e.target.value) : undefined,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="baths">Baths</Label>
-                <Input
-                  id="baths"
-                  type="number"
-                  step="0.1"
-                  value={formData.baths || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      baths: e.target.value ? parseFloat(e.target.value) : undefined,
-                    })
-                  }
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="depth">Depth</Label>
+              <Input
+                id="depth"
+                value={formData.depth || ''}
+                onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
+              />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="depth">Depth</Label>
-                <Input
-                  id="depth"
-                  value={formData.depth || ''}
-                  onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="width">Width</Label>
-                <Input
-                  id="width"
-                  value={formData.width || ''}
-                  onChange={(e) => setFormData({ ...formData, width: e.target.value })}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="width">Width</Label>
+              <Input
+                id="width"
+                value={formData.width || ''}
+                onChange={(e) => setFormData({ ...formData, width: e.target.value })}
+              />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="garage_size">Garage Size (number)</Label>
-                <Input
-                  id="garage_size"
-                  type="number"
-                  value={formData.garage_size || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      garage_size: e.target.value ? parseInt(e.target.value) : undefined,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="garage_size_text">Garage Size (text)</Label>
-                <Input
-                  id="garage_size_text"
-                  value={formData.garage_size_text !== undefined && formData.garage_size_text !== null ? String(formData.garage_size_text) : ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const numValue = parseFloat(value);
-                    setFormData({ 
-                      ...formData, 
-                      garage_size_text: value === '' ? undefined : (isNaN(numValue) ? value : numValue)
-                    });
-                  }}
-                  placeholder="e.g., '2-car' or '3'"
-                />
-              </div>
-            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="building_setbacks">Building Setbacks</Label>
+            <Textarea
+              id="building_setbacks"
+              value={formData.building_setbacks || ''}
+              onChange={(e) => setFormData({ ...formData, building_setbacks: e.target.value })}
+              rows={4}
+              placeholder="Enter building setbacks information..."
+            />
           </div>
 
           {/* Additional Information Section */}
           <div className="space-y-4 pt-4 border-t">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase">Additional Information</h3>
             <div className="space-y-2">
-              <Label htmlFor="building_setbacks">Building Setbacks</Label>
-              <Textarea
-                id="building_setbacks"
-                value={formData.building_setbacks || ''}
-                onChange={(e) => setFormData({ ...formData, building_setbacks: e.target.value })}
-                rows={4}
-                placeholder="Enter building setbacks information..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="power_box_location">Power Box Location</Label>
-              <Input
-                id="power_box_location"
-                value={formData.power_box_location || ''}
-                onChange={(e) => setFormData({ ...formData, power_box_location: e.target.value })}
-              />
-            </div>
-          </div>
-
-          {/* Lot Information Details */}
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Lot Information Details</h3>
-            <div className="space-y-2">
-              <Label htmlFor="lot_info">Lot Info</Label>
-              
+              <Label>Lot Info</Label>
               {/* Display existing bullet points */}
               {formData.lot_info && formData.lot_info.length > 0 && (
                 <div className="space-y-2 mb-3">
@@ -725,11 +679,11 @@ export function PropertyForm({
                       <Input
                         value={item}
                         onChange={(e) => {
-                          const updated = [...formData.lot_info!];
+                          const updated = [...(formData.lot_info || [])];
                           updated[index] = e.target.value;
                           setFormData({
                             ...formData,
-                            lot_info: updated.filter(item => item.trim().length > 0).length > 0 ? updated : undefined,
+                            lot_info: updated,
                           });
                         }}
                         className="flex-1 bg-white"
@@ -741,10 +695,10 @@ export function PropertyForm({
                         size="icon"
                         className="h-8 w-8 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
                         onClick={() => {
-                          const updated = formData.lot_info!.filter((_, i) => i !== index);
+                          const updated = (formData.lot_info || []).filter((_, i) => i !== index);
                           setFormData({
                             ...formData,
-                            lot_info: updated.length > 0 ? updated : undefined,
+                            lot_info: updated,
                           });
                         }}
                       >
@@ -754,7 +708,6 @@ export function PropertyForm({
                   ))}
                 </div>
               )}
-
               {/* Add new bullet point button */}
               <Button
                 type="button"
@@ -762,22 +715,15 @@ export function PropertyForm({
                 size="sm"
                 className="w-full"
                 onClick={() => {
-                  const newItem = '';
                   setFormData({
                     ...formData,
-                    lot_info: formData.lot_info ? [...formData.lot_info, newItem] : [newItem],
+                    lot_info: [...(formData.lot_info || []), ''],
                   });
                 }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Bullet Point
               </Button>
-
-              {formData.lot_info && formData.lot_info.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {formData.lot_info.filter(item => item.trim().length > 0).length} item(s) will be saved
-                </p>
-              )}
             </div>
           </div>
 

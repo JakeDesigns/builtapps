@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Property, Category, PropertiesApiResponse, ApiErrorResponse } from '@/lib/types';
+import { Property, Category } from '@/lib/types';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { MapCanvas } from '@/components/map/MapCanvas';
 import { PropertyCard } from '@/components/property/PropertyCard';
@@ -55,7 +55,7 @@ export default function HomePage() {
       const response = await fetch('/api/properties');
       
       // Read the response body only once
-      let responseData: PropertiesApiResponse | ApiErrorResponse;
+      let responseData: any;
       try {
         responseData = await response.json();
       } catch (e) {
@@ -65,28 +65,22 @@ export default function HomePage() {
       
       if (!response.ok) {
         // Build a more informative error message
-        const errorData = responseData as ApiErrorResponse;
-        let errorMessage = errorData.error || `API Error: ${response.status} ${response.statusText}`;
-        if (errorData.hint) {
-          errorMessage += `\n\n${errorData.hint}`;
+        let errorMessage = responseData.error || `API Error: ${response.status} ${response.statusText}`;
+        if (responseData.hint) {
+          errorMessage += `\n\n${responseData.hint}`;
         }
-        if (errorData.details) {
-          console.error('Error details:', errorData.details);
+        if (responseData.details) {
+          console.error('Error details:', responseData.details);
           // Include details in dev mode
           if (process.env.NODE_ENV === 'development') {
-            errorMessage += `\n\nDetails: ${errorData.details}`;
+            errorMessage += `\n\nDetails: ${responseData.details}`;
           }
         }
         throw new Error(errorMessage);
       }
       
       // Success - use the already parsed responseData
-      const successData = responseData as PropertiesApiResponse;
-      if ('properties' in successData) {
-        setProperties(successData.properties || []);
-      } else {
-        throw new Error('Invalid response format');
-      }
+      setProperties(responseData.properties || []);
     } catch (error) {
       console.error('Error fetching properties:', error);
       
@@ -329,13 +323,8 @@ export default function HomePage() {
           property={selectedProperty}
           onClose={() => setSelectedProperty(null)}
           onUpdate={(updatedProperty) => {
-            // If property was deleted, close the panel and refresh
-            if (updatedProperty.is_deleted) {
-              setSelectedProperty(null);
-            } else {
-              // Update the selected property
-              setSelectedProperty(updatedProperty);
-            }
+            // Update the selected property
+            setSelectedProperty(updatedProperty);
             // Refresh the properties list to update markers
             fetchProperties();
           }}
