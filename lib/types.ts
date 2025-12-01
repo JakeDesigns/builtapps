@@ -26,7 +26,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   for_sale_completed: 'Homes for Sale (Completed)',
   pending: 'Homes Pending',
   pending_under_construction: 'Pending & Under Construction',
-  sold: 'Homes Sold',
+  sold: 'Homes Closed',
   competitors: 'Competitors',
 };
 

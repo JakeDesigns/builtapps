@@ -12,7 +12,7 @@ A Next.js application for managing and viewing property listings on an interacti
   - Homes for sale and completed (green)
   - Homes pending (red)
   - Homes pending & under construction (half red/blue)
-  - Homes sold (gold)
+  - Homes Closed (gold)
 - **Search**: US-only address autocomplete search
 - **Filtering**: Toggle visibility of property categories
 - **Compare Mode**: Select multiple properties to compare side-by-side
