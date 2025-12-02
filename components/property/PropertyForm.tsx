@@ -259,6 +259,7 @@ export function PropertyForm({
           <DialogDescription>Enter the property details below.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* House Title */}
           <div className="space-y-2">
             <Label htmlFor="title">House Title *</Label>
             <Input
@@ -269,80 +270,9 @@ export function PropertyForm({
             />
           </div>
 
-          {!openedViaPin ? (
-            <div className="space-y-2">
-              <Label htmlFor="address">House Location/Address *</Label>
-              <SearchBar 
-                onSelect={handleAddressSelect}
-                initialValue={prefillAddress}
-              />
-              {formData.address && (
-                <p className="text-sm text-muted-foreground">Selected: {formData.address}</p>
-              )}
-              {pinMode && (
-                <p className="text-sm text-blue-600 font-medium">
-                  Click on the map to set the location
-                </p>
-              )}
-              {(formData.lat !== 0 || formData.lng !== 0) && (
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="lat" className="text-xs">Latitude</Label>
-                    <Input
-                      id="lat"
-                      type="number"
-                      step="0.000001"
-                      value={formData.lat.toFixed(6)}
-                      onChange={(e) => handleManualCoordinateChange('lat', e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="lng" className="text-xs">Longitude</Label>
-                    <Input
-                      id="lng"
-                      type="number"
-                      step="0.000001"
-                      value={formData.lng.toFixed(6)}
-                      onChange={(e) => handleManualCoordinateChange('lng', e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label>Location (Pinned on Map)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="lat" className="text-xs">Latitude</Label>
-                  <Input
-                    id="lat"
-                    type="number"
-                    step="0.000001"
-                    value={formData.lat.toFixed(6)}
-                    onChange={(e) => handleManualCoordinateChange('lat', e.target.value)}
-                    className="text-sm"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="lng" className="text-xs">Longitude</Label>
-                  <Input
-                    id="lng"
-                    type="number"
-                    step="0.000001"
-                    value={formData.lng.toFixed(6)}
-                    onChange={(e) => handleManualCoordinateChange('lng', e.target.value)}
-                    className="text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
+          {/* CATEGORY Section */}
           <div className="space-y-2">
-            <Label htmlFor="category">Category *</Label>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Category</h3>
             <Select
               value={formData.category}
               onValueChange={(value) => setFormData({ ...formData, category: value as Category })}
@@ -401,127 +331,257 @@ export function PropertyForm({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="subdivision_phase">Subdivision Phase</Label>
-            <Input
-              id="subdivision_phase"
-              value={formData.subdivision_phase || ''}
-              onChange={(e) => setFormData({ ...formData, subdivision_phase: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="lot">Lot</Label>
-              <Input
-                id="lot"
-                value={formData.lot || ''}
-                onChange={(e) => setFormData({ ...formData, lot: e.target.value })}
-              />
+          {/* HOUSE INFORMATION Section */}
+          <div className="space-y-4 pt-4 border-t">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">House Information</h3>
+            
+            {/* House Name and House Price */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="house_name">House Name</Label>
+                <Input
+                  id="house_name"
+                  value={formData.house_name || ''}
+                  onChange={(e) => setFormData({ ...formData, house_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="house_price">House Price ($)</Label>
+                <Input
+                  id="house_price"
+                  type="number"
+                  step="0.01"
+                  value={formData.house_price || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      house_price: e.target.value ? parseFloat(e.target.value) : undefined,
+                    })
+                  }
+                />
+              </div>
             </div>
+
+            {/* Address */}
+            {!openedViaPin ? (
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <SearchBar 
+                  onSelect={handleAddressSelect}
+                  initialValue={prefillAddress}
+                />
+                {formData.address && (
+                  <p className="text-sm text-muted-foreground">Selected: {formData.address}</p>
+                )}
+                {pinMode && (
+                  <p className="text-sm text-blue-600 font-medium">
+                    Click on the map to set the location
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Address (Pinned on Map)</Label>
+                <Input
+                  value={formData.address || ''}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Enter address..."
+                />
+              </div>
+            )}
+
+            {/* Square Footage (House) */}
             <div className="space-y-2">
-              <Label htmlFor="block">Block</Label>
+              <Label htmlFor="size_sqft">Square Footage</Label>
               <Input
-                id="block"
-                value={formData.block || ''}
-                onChange={(e) => setFormData({ ...formData, block: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="house_name">House Name</Label>
-            <Input
-              id="house_name"
-              value={formData.house_name || ''}
-              onChange={(e) => setFormData({ ...formData, house_name: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="square_footage_basic">Square Footage</Label>
-            <Input
-              id="square_footage_basic"
-              type="number"
-              value={formData.square_footage || ''}
-              onChange={(e) => {
-                setLastManuallyChanged('square_footage');
-                setFormData({ 
-                  ...formData, 
-                  square_footage: e.target.value ? parseInt(e.target.value) : undefined 
-                });
-              }}
-            />
-          </div>
-
-          {/* Property Details */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="bedrooms">Bedrooms</Label>
-              <Input
-                id="bedrooms"
+                id="size_sqft"
                 type="number"
-                value={formData.bedrooms || ''}
+                value={formData.size_sqft || ''}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    bedrooms: e.target.value ? parseInt(e.target.value) : undefined,
+                    size_sqft: e.target.value ? parseInt(e.target.value) : undefined,
                   })
                 }
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="baths">Baths</Label>
-              <Input
-                id="baths"
-                type="number"
-                step="0.1"
-                value={formData.baths || ''}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    baths: e.target.value ? parseFloat(e.target.value) : undefined,
-                  })
-                }
-              />
+
+            {/* Bedrooms and Baths */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bedrooms">Bedrooms</Label>
+                <Input
+                  id="bedrooms"
+                  type="number"
+                  value={formData.bedrooms || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      bedrooms: e.target.value ? parseInt(e.target.value) : undefined,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="baths">Baths</Label>
+                <Input
+                  id="baths"
+                  type="number"
+                  step="0.1"
+                  value={formData.baths || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      baths: e.target.value ? parseFloat(e.target.value) : undefined,
+                    })
+                  }
+                />
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="garage_size">Garage Size</Label>
-              <Input
-                id="garage_size"
-                type="number"
-                value={formData.garage_size || ''}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    garage_size: e.target.value ? parseInt(e.target.value) : undefined,
-                  })
-                }
-              />
+
+            {/* Garage Size and Garage Type */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="garage_size">Garage Size</Label>
+                <Input
+                  id="garage_size"
+                  type="number"
+                  value={formData.garage_size || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      garage_size: e.target.value ? parseInt(e.target.value) : undefined,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="garage_size_text">Garage Type</Label>
+                <Input
+                  id="garage_size_text"
+                  value={formData.garage_size_text || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const numValue = parseFloat(value);
+                    setFormData({ 
+                      ...formData, 
+                      garage_size_text: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
+                    });
+                  }}
+                  placeholder="text field"
+                />
+              </div>
             </div>
+
+            {/* House Width and House Depth */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="width">House Width</Label>
+                <Input
+                  id="width"
+                  value={formData.width || ''}
+                  onChange={(e) => setFormData({ ...formData, width: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="depth">House Depth</Label>
+                <Input
+                  id="depth"
+                  value={formData.depth || ''}
+                  onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* House Notes */}
             <div className="space-y-2">
-              <Label htmlFor="garage_size_text">Garage Type</Label>
-              <Input
-                id="garage_size_text"
-                value={formData.garage_size_text || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  const numValue = parseFloat(value);
-                  setFormData({ 
-                    ...formData, 
-                    garage_size_text: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
-                  });
-                }}
-                placeholder="text field"
+              <Label htmlFor="power_box_location">House Notes</Label>
+              <Textarea
+                id="power_box_location"
+                value={formData.power_box_location || ''}
+                onChange={(e) => setFormData({ ...formData, power_box_location: e.target.value })}
+                rows={3}
+                placeholder="Enter building setbacks information..."
               />
             </div>
           </div>
 
           {/* LOT INFORMATION Section */}
           <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Lot Information</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lot Information</h3>
+            
+            {/* Subdivision Phase */}
+            <div className="space-y-2">
+              <Label htmlFor="subdivision_phase">Subdivision Phase</Label>
+              <Input
+                id="subdivision_phase"
+                value={formData.subdivision_phase || ''}
+                onChange={(e) => setFormData({ ...formData, subdivision_phase: e.target.value })}
+              />
+            </div>
+
+            {/* Lot # and Block */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="lot_number">Lot #</Label>
+                <Input
+                  id="lot_number"
+                  value={formData.lot_number || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const numValue = parseFloat(value);
+                    setFormData({ 
+                      ...formData, 
+                      lot_number: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
+                    });
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="block">Block</Label>
+                <Input
+                  id="block"
+                  value={formData.block || ''}
+                  onChange={(e) => setFormData({ ...formData, block: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Lot Width and Lot Depth */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="lot_width">Lot Width (feet)</Label>
+                <Input
+                  id="lot_width"
+                  type="number"
+                  step="0.01"
+                  value={formData.lot_width || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      lot_width: e.target.value ? parseFloat(e.target.value) : undefined,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lot_depth">Lot Depth (feet)</Label>
+                <Input
+                  id="lot_depth"
+                  type="number"
+                  step="0.01"
+                  value={formData.lot_depth || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      lot_depth: e.target.value ? parseFloat(e.target.value) : undefined,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Feet and Acres */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="square_footage">Feet</Label>
@@ -555,137 +615,43 @@ export function PropertyForm({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="lot_number">Lot #</Label>
-                <Input
-                  id="lot_number"
-                  value={formData.lot_number || ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const numValue = parseFloat(value);
-                    setFormData({ 
-                      ...formData, 
-                      lot_number: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
-                    });
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="block">Block</Label>
-                <Input
-                  id="block"
-                  value={formData.block || ''}
-                  onChange={(e) => setFormData({ ...formData, block: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="lot_width">Lot Width (feet)</Label>
-                <Input
-                  id="lot_width"
-                  type="number"
-                  step="0.01"
-                  value={formData.lot_width || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      lot_width: e.target.value ? parseFloat(e.target.value) : undefined,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lot_depth">Lot Depth (feet)</Label>
-                <Input
-                  id="lot_depth"
-                  type="number"
-                  step="0.01"
-                  value={formData.lot_depth || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      lot_depth: e.target.value ? parseFloat(e.target.value) : undefined,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* PRICING Section */}
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Pricing</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="lot_price">Lot Price ($)</Label>
-                <Input
-                  id="lot_price"
-                  type="number"
-                  step="0.01"
-                  value={formData.lot_price || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      lot_price: e.target.value ? parseFloat(e.target.value) : undefined,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="house_price">House Price ($)</Label>
-                <Input
-                  id="house_price"
-                  type="number"
-                  step="0.01"
-                  value={formData.house_price || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      house_price: e.target.value ? parseFloat(e.target.value) : undefined,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+            {/* Lot Price */}
             <div className="space-y-2">
-              <Label htmlFor="depth">Depth</Label>
+              <Label htmlFor="lot_price">Lot Price ($)</Label>
               <Input
-                id="depth"
-                value={formData.depth || ''}
-                onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
+                id="lot_price"
+                type="number"
+                step="0.01"
+                value={formData.lot_price || ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    lot_price: e.target.value ? parseFloat(e.target.value) : undefined,
+                  })
+                }
               />
             </div>
+
+            {/* Building Setbacks */}
             <div className="space-y-2">
-              <Label htmlFor="width">Width</Label>
-              <Input
-                id="width"
-                value={formData.width || ''}
-                onChange={(e) => setFormData({ ...formData, width: e.target.value })}
+              <Label htmlFor="building_setbacks">Building Setbacks</Label>
+              <Textarea
+                id="building_setbacks"
+                value={formData.building_setbacks || ''}
+                onChange={(e) => setFormData({ ...formData, building_setbacks: e.target.value })}
+                rows={3}
+                placeholder="Enter building setbacks information..."
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="building_setbacks">Building Setbacks</Label>
-            <Textarea
-              id="building_setbacks"
-              value={formData.building_setbacks || ''}
-              onChange={(e) => setFormData({ ...formData, building_setbacks: e.target.value })}
-              rows={4}
-              placeholder="Enter building setbacks information..."
-            />
-          </div>
-
-          {/* Additional Information Section */}
+          {/* ADDITIONAL INFORMATION Section */}
           <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Additional Information</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Additional Information</h3>
+            
+            {/* Add Bullet Point */}
             <div className="space-y-2">
-              <Label>Lot Info</Label>
               {/* Display existing bullet points */}
               {formData.lot_info && formData.lot_info.length > 0 && (
                 <div className="space-y-2 mb-3">
@@ -740,6 +706,30 @@ export function PropertyForm({
                 <Plus className="h-4 w-4 mr-2" />
                 Add Bullet Point
               </Button>
+            </div>
+
+            {/* Latitude and Longitude */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="lat">Latitude</Label>
+                <Input
+                  id="lat"
+                  type="number"
+                  step="0.000001"
+                  value={formData.lat !== 0 ? formData.lat.toFixed(6) : ''}
+                  onChange={(e) => handleManualCoordinateChange('lat', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lng">Longitude</Label>
+                <Input
+                  id="lng"
+                  type="number"
+                  step="0.000001"
+                  value={formData.lng !== 0 ? formData.lng.toFixed(6) : ''}
+                  onChange={(e) => handleManualCoordinateChange('lng', e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
