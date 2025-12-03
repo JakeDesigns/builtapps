@@ -81,6 +81,16 @@ export interface PropertyFormData {
   lat: number;
   lng: number;
   category: Category;
+  // New listing fields
+  lot_number?: string;
+  lot_width?: number;
+  lot_depth?: number;
+  lot_price?: number;
+  house_price?: number;
+  square_footage?: number;
+  acres?: number;
+  garage_size_text?: string;
+  lot_info?: string[];
 }
 
 export interface UpdatePropertyData {
