@@ -1,5 +1,6 @@
 'use client';
 
+// Force rebuild - reorganized layout
 import { useState, useEffect, useRef } from 'react';
 import { PropertyFormData, Category, CATEGORY_LABELS, CATEGORY_COLORS } from '@/lib/types';
 import { Plus, Trash2 } from 'lucide-react';
