@@ -897,22 +897,22 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                 <div className="space-y-1">
                   {/* Line 1: House Name */}
                   {property.house_name && (
-                    <p className="text-base text-foreground font-medium">* {property.house_name}</p>
+                    <p className="text-base text-foreground font-medium">• {property.house_name}</p>
                   )}
                   
                   {/* Line 2: Address */}
                   {property.address && (
-                    <p className="text-base text-foreground">* {property.address}</p>
+                    <p className="text-base text-foreground">• {property.address}</p>
                   )}
                   
                   {/* Line 3: Lot Number and Block on same row, evenly spaced */}
                   {((property.lot_number || property.lot) || property.block) && (
                     <div className="flex justify-between">
                       {(property.lot_number || property.lot) && (
-                        <p className="text-base text-foreground">* Lot {property.lot_number || property.lot}</p>
+                        <p className="text-base text-foreground">• Lot {property.lot_number || property.lot}</p>
                       )}
                       {property.block && (
-                        <p className="text-base text-foreground">* Block {property.block}</p>
+                        <p className="text-base text-foreground">• Block {property.block}</p>
                       )}
                     </div>
                   )}
