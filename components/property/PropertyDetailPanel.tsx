@@ -551,26 +551,12 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
               <>
                 {/* Edit Mode Form - Reorganized to match image layout exactly */}
                 <div className="space-y-6">
-                  {/* BASIC INFORMATION Section */}
+                  {/* HOUSE INFORMATION Section */}
                   <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase">Basic Information</h3>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-address">Address</Label>
-                        <Input
-                          id="edit-address"
-                          value={editForm.address}
-                          onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-subdivision">Subdivision Phase</Label>
-                        <Input
-                          id="edit-subdivision"
-                          value={editForm.subdivision_phase}
-                          onChange={(e) => setEditForm({ ...editForm, subdivision_phase: e.target.value })}
-                        />
-                      </div>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">House Information</h3>
+                    
+                    {/* House Name and House Price */}
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-house-name">House Name</Label>
                         <Input
@@ -580,22 +566,39 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-square-footage-basic">Square Footage</Label>
+                        <Label htmlFor="edit-house-price">House Price ($)</Label>
                         <Input
-                          id="edit-square-footage-basic"
+                          id="edit-house-price"
                           type="number"
-                          value={editForm.square_footage}
-                          onChange={(e) => {
-                            setLastManuallyChanged('square_footage');
-                            setEditForm({ ...editForm, square_footage: e.target.value });
-                          }}
+                          step="0.01"
+                          value={editForm.house_price}
+                          onChange={(e) => setEditForm({ ...editForm, house_price: e.target.value })}
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Property Details - Bedrooms, Baths, Garage Size, Garage Type */}
-                  <div className="space-y-4 pt-4 border-t">
+                    {/* Address */}
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-address">Address</Label>
+                      <Input
+                        id="edit-address"
+                        value={editForm.address}
+                        onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                      />
+                    </div>
+
+                    {/* Square Footage */}
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-size-sqft">Square Footage</Label>
+                      <Input
+                        id="edit-size-sqft"
+                        type="number"
+                        value={editForm.size_sqft}
+                        onChange={(e) => setEditForm({ ...editForm, size_sqft: e.target.value })}
+                      />
+                    </div>
+
+                    {/* Bedrooms and Baths */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-bedrooms">Bedrooms</Label>
@@ -617,6 +620,8 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                         />
                       </div>
                     </div>
+
+                    {/* Garage Size and Garage Type */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-garage">Garage Size</Label>
@@ -644,11 +649,106 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                         />
                       </div>
                     </div>
+
+                    {/* House Width and House Depth */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-width">House Width</Label>
+                        <Input
+                          id="edit-width"
+                          value={editForm.width}
+                          onChange={(e) => setEditForm({ ...editForm, width: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-depth">House Depth</Label>
+                        <Input
+                          id="edit-depth"
+                          value={editForm.depth}
+                          onChange={(e) => setEditForm({ ...editForm, depth: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    {/* House Notes */}
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-house-notes">House Notes</Label>
+                      <Textarea
+                        id="edit-house-notes"
+                        value={editForm.power_box_location}
+                        onChange={(e) => setEditForm({ ...editForm, power_box_location: e.target.value })}
+                        rows={3}
+                        placeholder="Enter building setbacks information..."
+                      />
+                    </div>
                   </div>
 
                   {/* LOT INFORMATION Section */}
                   <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase">Lot Information</h3>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lot Information</h3>
+                    
+                    {/* Subdivision Phase */}
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-subdivision">Subdivision Phase</Label>
+                      <Input
+                        id="edit-subdivision"
+                        value={editForm.subdivision_phase}
+                        onChange={(e) => setEditForm({ ...editForm, subdivision_phase: e.target.value })}
+                      />
+                    </div>
+
+                    {/* Lot # and Block */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-lot-number">Lot #</Label>
+                        <Input
+                          id="edit-lot-number"
+                          value={editForm.lot_number}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const numValue = parseFloat(value);
+                            setEditForm({ 
+                              ...editForm, 
+                              lot_number: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
+                            });
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-block">Block</Label>
+                        <Input
+                          id="edit-block"
+                          value={editForm.block}
+                          onChange={(e) => setEditForm({ ...editForm, block: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Lot Width and Lot Depth */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-lot-width">Lot Width (feet)</Label>
+                        <Input
+                          id="edit-lot-width"
+                          type="number"
+                          step="0.01"
+                          value={editForm.lot_width}
+                          onChange={(e) => setEditForm({ ...editForm, lot_width: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-lot-depth">Lot Depth (feet)</Label>
+                        <Input
+                          id="edit-lot-depth"
+                          type="number"
+                          step="0.01"
+                          value={editForm.lot_depth}
+                          onChange={(e) => setEditForm({ ...editForm, lot_depth: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Feet and Acres */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-feet">Feet</Label>
@@ -676,91 +776,27 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-lot-number">Lot #</Label>
-                        <Input
-                          id="edit-lot-number"
-                          value={editForm.lot_number}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            const numValue = parseFloat(value);
-                            setEditForm({ 
-                              ...editForm, 
-                              lot_number: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
-                            });
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-block">Block</Label>
-                        <Input
-                          id="edit-block"
-                          value={editForm.block}
-                          onChange={(e) => setEditForm({ ...editForm, block: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-lot-width">Lot Width (feet)</Label>
-                        <Input
-                          id="edit-lot-width"
-                          type="number"
-                          step="0.01"
-                          value={editForm.lot_width}
-                          onChange={(e) => setEditForm({ ...editForm, lot_width: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-lot-depth">Lot Depth (feet)</Label>
-                        <Input
-                          id="edit-lot-depth"
-                          type="number"
-                          step="0.01"
-                          value={editForm.lot_depth}
-                          onChange={(e) => setEditForm({ ...editForm, lot_depth: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* PRICING Section */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase">Pricing</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-lot-price">Lot Price ($)</Label>
-                        <Input
-                          id="edit-lot-price"
-                          type="number"
-                          step="0.01"
-                          value={editForm.lot_price}
-                          onChange={(e) => setEditForm({ ...editForm, lot_price: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-house-price">House Price ($)</Label>
-                        <Input
-                          id="edit-house-price"
-                          type="number"
-                          step="0.01"
-                          value={editForm.house_price}
-                          onChange={(e) => setEditForm({ ...editForm, house_price: e.target.value })}
-                        />
-                      </div>
+                    {/* Lot Price */}
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-lot-price">Lot Price ($)</Label>
+                      <Input
+                        id="edit-lot-price"
+                        type="number"
+                        step="0.01"
+                        value={editForm.lot_price}
+                        onChange={(e) => setEditForm({ ...editForm, lot_price: e.target.value })}
+                      />
                     </div>
-                  </div>
 
-                  {/* Building Setbacks Section */}
-                  <div className="space-y-4 pt-4 border-t">
+                    {/* Building Setbacks */}
                     <div className="space-y-2">
                       <Label htmlFor="edit-building-setbacks">Building Setbacks</Label>
                       <Textarea
                         id="edit-building-setbacks"
                         value={editForm.building_setbacks}
                         onChange={(e) => setEditForm({ ...editForm, building_setbacks: e.target.value })}
-                        rows={4}
+                        rows={3}
                         placeholder="Enter building setbacks information..."
                       />
                     </div>
@@ -768,9 +804,10 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
 
                   {/* Additional Information Section */}
                   <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase">Additional Information</h3>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Additional Information</h3>
+                    
+                    {/* Add Bullet Point */}
+                    <div className="space-y-2">
                         {/* Display existing bullet points */}
                         {editForm.lot_info && editForm.lot_info.length > 0 && (
                           <div className="space-y-2 mb-3">
@@ -825,28 +862,29 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                           <Plus className="h-4 w-4 mr-2" />
                           Add Bullet Point
                         </Button>
+                    </div>
+
+                    {/* Latitude and Longitude */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-lat">Latitude</Label>
+                        <Input
+                          id="edit-lat"
+                          type="number"
+                          step="0.000001"
+                          value={editForm.lat}
+                          onChange={(e) => setEditForm({ ...editForm, lat: e.target.value })}
+                        />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-lat">Latitude</Label>
-                          <Input
-                            id="edit-lat"
-                            type="number"
-                            step="0.000001"
-                            value={editForm.lat}
-                            onChange={(e) => setEditForm({ ...editForm, lat: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-lng">Longitude</Label>
-                          <Input
-                            id="edit-lng"
-                            type="number"
-                            step="0.000001"
-                            value={editForm.lng}
-                            onChange={(e) => setEditForm({ ...editForm, lng: e.target.value })}
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-lng">Longitude</Label>
+                        <Input
+                          id="edit-lng"
+                          type="number"
+                          step="0.000001"
+                          value={editForm.lng}
+                          onChange={(e) => setEditForm({ ...editForm, lng: e.target.value })}
+                        />
                       </div>
                     </div>
                   </div>
