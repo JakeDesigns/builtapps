@@ -26,7 +26,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   for_sale_completed: 'Homes for Sale (Completed)',
   pending: 'Homes Pending',
   pending_under_construction: 'Pending & Under Construction',
-  sold: 'Homes Closed',
+  sold: 'Homes Sold',
   competitors: 'Competitors',
 };
 
@@ -81,16 +81,6 @@ export interface PropertyFormData {
   lat: number;
   lng: number;
   category: Category;
-  // New listing fields
-  lot_number?: string | number;
-  lot_width?: number;
-  lot_depth?: number;
-  lot_price?: number;
-  house_price?: number;
-  square_footage?: number;
-  acres?: number;
-  garage_size_text?: string | number;
-  lot_info?: string[];
 }
 
 export interface UpdatePropertyData {

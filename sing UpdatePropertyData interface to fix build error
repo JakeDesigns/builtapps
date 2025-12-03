@@ -1,0 +1,154 @@
+warning: in the working copy of 'app/api/properties/[id]/route.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/app/api/properties/[id]/route.ts b/app/api/properties/[id]/route.ts[m
+[1mindex 564c79e..183d787 100644[m
+[1m--- a/app/api/properties/[id]/route.ts[m
+[1m+++ b/app/api/properties/[id]/route.ts[m
+[36m@@ -1,6 +1,6 @@[m
+ import { NextRequest, NextResponse } from 'next/server';[m
+ import { supabaseAdmin } from '@/lib/supabase/server';[m
+[31m-import { Category, UpdatePropertyData } from '@/lib/types';[m
+[32m+[m[32mimport { Category } from '@/lib/types';[m
+ [m
+ export async function PATCH([m
+   request: NextRequest,[m
+[36m@@ -8,15 +8,6 @@[m [mexport async function PATCH([m
+ ) {[m
+   try {[m
+     const propertyId = params.id;[m
+[31m-    [m
+[31m-    // Validate property ID format (UUID)[m
+[31m-    if (!propertyId || typeof propertyId !== 'string' || propertyId.length < 10) {[m
+[31m-      return NextResponse.json([m
+[31m-        { error: 'Invalid property ID' },[m
+[31m-        { status: 400 }[m
+[31m-      );[m
+[31m-    }[m
+[31m-[m
+     const body = await request.json();[m
+ [m
+     // Validate category if provided[m
+[36m@@ -41,18 +32,9 @@[m [mexport async function PATCH([m
+ [m
+     // Build update object with only provided fields[m
+     // Only include lot/block if they have values (to avoid errors if columns don't exist yet)[m
+[31m-    const updateData: UpdatePropertyData = {};[m
+[32m+[m[32m    const updateData: any = {};[m
+     if (body.category !== undefined) updateData.category = body.category;[m
+[31m-    if (body.title !== undefined) {[m
+[31m-      const title = String(body.title).trim();[m
+[31m-      if (title.length > 500) {[m
+[31m-        return NextResponse.json([m
+[31m-          { error: 'Title must be less than 500 characters' },[m
+[31m-          { status: 400 }[m
+[31m-        );[m
+[31m-      }[m
+[31m-      updateData.title = title;[m
+[31m-    }[m
+[32m+[m[32m    if (body.title !== undefined) updateData.title = body.title;[m
+     if (body.subdivision_phase !== undefined) updateData.subdivision_phase = body.subdivision_phase;[m
+     // Only include lot/block if they're not null/undefined (they're optional fields)[m
+     if (body.lot !== undefined && body.lot !== null) updateData.lot = body.lot;[m
+[36m@@ -67,101 +49,8 @@[m [mexport async function PATCH([m
+     if (body.width !== undefined) updateData.width = body.width;[m
+     if (body.building_setbacks !== undefined) updateData.building_setbacks = body.building_setbacks;[m
+     if (body.power_box_location !== undefined) updateData.power_box_location = body.power_box_location;[m
+[31m-    if (body.lat !== undefined) {[m
+[31m-      if (typeof body.lat !== 'number' || isNaN(body.lat) || body.lat < -90 || body.lat > 90) {[m
+[31m-        return NextResponse.json([m
+[31m-          { error: 'Invalid latitude. Must be between -90 and 90' },[m
+[31m-          { status: 400 }[m
+[31m-        );[m
+[31m-      }[m
+[31m-      updateData.lat = body.lat;[m
+[31m-    }[m
+[31m-    if (body.lng !== undefined) {[m
+[31m-      if (typeof body.lng !== 'number' || isNaN(body.lng) || body.lng < -180 || body.lng > 180) {[m
+[31m-        return NextResponse.json([m
+[31m-          { error: 'Invalid longitude. Must be between -180 and 180' },[m
+[31m-          { status: 400 }[m
+[31m-        );[m
+[31m-      }[m
+[31m-      updateData.lng = body.lng;[m
+[31m-    }[m
+[31m-[m
+[31m-    // Handle new listing fields[m
+[31m-    if (body.lot_number !== undefined) {[m
+[31m-      updateData.lot_number = body.lot_number !== null ? String(body.lot_number) : null;[m
+[31m-    }[m
+[31m-    if (body.lot_width !== undefined) {[m
+[31m-      if (body.lot_width !== null && (typeof body.lot_width !== 'number' || body.lot_width < 0)) {[m
+[31m-        return NextResponse.json([m
+[31m-          { error: 'Lot width must be a positive number' },[m
+[31m-          { status: 400 }[m
+[31m-        );[m
+[31m-      }[m
+[31m-      updateData.lot_width = body.lot_width;[m
+[31m-    }[m
+[31m-    if (body.lot_depth !== undefined) {[m
+[31m-      if (body.lot_depth !== null && (typeof body.lot_depth !== 'number' || body.lot_depth < 0)) {[m
+[31m-        return NextResponse.json([m
+[31m-          { error: 'Lot depth must be a positive number' },[m
+[31m-          { status: 400 }[m
+[31m-        );[m
+[31m-      }[m
+[31m-      updateData.lot_depth = body.lot_depth;[m
+[31m-    }[m
+[31m-    if (body.lot_price !== undefined) {[m
+[31m-      if (body.lot_price !== null && (typeof body.lot_price !== 'number' || body.lot_price < 0)) {[m
+[31m-        return NextResponse.json([m
+[31m-          { error: 'Lot price must be a positive number' },[m
+[31m-          { status: 400 }[m
+[31m-        );[m
+[31m-      }[m
+[31m-      updateData.lot_price = body.lot_price;[m
+[31m-    }[m
+[31m-    if (body.house_price !== undefined) {[m
+[31m-      if (body.house_price !== null && (typeof body.house_price !== 'number' || body.house_price < 0)) {[m
+[31m-        return NextResponse.json([m
+[31m-          { error: 'House price must be a positive number' },[m
+[31m-          { status: 400 }[m
+[31m-        );[m
+[31m-      }[m
+[31m-      updateData.house_price = body.house_price;[m
+[31m-    }[m
+[31m-    if (body.square_footage !== undefined) {[m
+[31m-      if (body.square_footage !== null && (typeof body.square_footage !== 'number' || body.square_footage < 0 || !Number.isInteger(body.square_footage))) {[m
+[31m-        return NextResponse.json([m
+[31m-          { error: 'Square footage must be a non-negative integer' },[m
+[31m-          { status: 400 }[m
+[31m-        );[m
+[31m-      }[m
+[31m-      updateData.square_footage = body.square_footage;[m
+[31m-    }[m
+[31m-    if (body.acres !== undefined) {[m
+[31m-      if (body.acres !== null && (typeof body.acres !== 'number' || body.acres < 0)) {[m
+[31m-        return NextResponse.json([m
+[31m-          { error: 'Acres must be a positive number' },[m
+[31m-          { status: 400 }[m
+[31m-        );[m
+[31m-      }[m
+[31m-      updateData.acres = body.acres;[m
+[31m-    }[m
+[31m-    if (body.garage_size_text !== undefined) {[m
+[31m-      updateData.garage_size_text = body.garage_size_text !== null ? String(body.garage_size_text) : null;[m
+[31m-    }[m
+[31m-    if (body.lot_info !== undefined) {[m
+[31m-      if (body.lot_info !== null && !Array.isArray(body.lot_info)) {[m
+[31m-        return NextResponse.json([m
+[31m-          { error: 'Lot info must be an array of strings' },[m
+[31m-          { status: 400 }[m
+[31m-        );[m
+[31m-      }[m
+[31m-      // Sanitize lot_info array[m
+[31m-      updateData.lot_info = body.lot_info !== null[m
+[31m-        ? body.lot_info.filter((item: unknown) => typeof item === 'string' && item.trim().length > 0).map((item: string) => item.trim())[m
+[31m-        : null;[m
+[31m-    }[m
+[31m-    if (body.is_deleted !== undefined) {[m
+[31m-      updateData.is_deleted = body.is_deleted;[m
+[31m-    }[m
+[32m+[m[32m    if (body.lat !== undefined) updateData.lat = body.lat;[m
+[32m+[m[32m    if (body.lng !== undefined) updateData.lng = body.lng;[m
+ [m
+     if (Object.keys(updateData).length === 0) {[m
+       return NextResponse.json([m
