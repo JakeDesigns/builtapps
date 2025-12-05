@@ -333,12 +333,13 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
       }
 
       setNotification({ type: 'success', message: 'Property deleted successfully!' });
+      // Update parent state first to trigger refresh
+      if (onUpdate) {
+        onUpdate({ ...property, is_deleted: true });
+      }
       setTimeout(() => {
         setNotification(null);
-        onClose(); // Close the panel
-        if (onUpdate) {
-          onUpdate({ ...property, is_deleted: true }); // Update parent state
-        }
+        onClose(); // Close the panel after refresh
       }, 1500);
     } catch (error) {
       console.error('Error deleting property:', error);
@@ -1038,3 +1039,4 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
     </>
   );
 }
+it says property deleted successfully but it is still there
