@@ -51,6 +51,17 @@ export async function PATCH(
     if (body.power_box_location !== undefined) updateData.power_box_location = body.power_box_location;
     if (body.lat !== undefined) updateData.lat = body.lat;
     if (body.lng !== undefined) updateData.lng = body.lng;
+    if (body.is_deleted !== undefined) updateData.is_deleted = body.is_deleted;
+    // New listing fields
+    if (body.square_footage !== undefined) updateData.square_footage = body.square_footage;
+    if (body.acres !== undefined) updateData.acres = body.acres;
+    if (body.lot_number !== undefined) updateData.lot_number = body.lot_number;
+    if (body.lot_width !== undefined) updateData.lot_width = body.lot_width;
+    if (body.lot_depth !== undefined) updateData.lot_depth = body.lot_depth;
+    if (body.lot_price !== undefined) updateData.lot_price = body.lot_price;
+    if (body.house_price !== undefined) updateData.house_price = body.house_price;
+    if (body.garage_size_text !== undefined) updateData.garage_size_text = body.garage_size_text;
+    if (body.lot_info !== undefined) updateData.lot_info = body.lot_info;
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
