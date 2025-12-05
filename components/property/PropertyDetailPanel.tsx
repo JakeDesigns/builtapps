@@ -1039,4 +1039,3 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
     </>
   );
 }
-it says property deleted successfully but it is still there
