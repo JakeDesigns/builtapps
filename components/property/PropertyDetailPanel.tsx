@@ -827,130 +827,226 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
               </>
             ) : (
               <>
-                {/* Read-Only Display */}
-                {/* Address Section */}
-                {property.address && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-2">
-                      Location
-                    </h3>
-                    <p className="text-base text-foreground">{property.address}</p>
-                  </div>
-                )}
-
-                {/* Key Details Grid */}
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
-                    Property Details
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
+                {/* Read-Only Display - Matches Edit Mode Structure */}
+                
+                {/* HOUSE INFORMATION Section */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">House Information</h3>
+                  
+                  <div className="space-y-3">
+                    {/* House Name & House Price */}
+                    {(property.house_name || property.house_price) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        {property.house_name && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">House Name</p>
+                            <p className="text-base font-medium break-words">{property.house_name}</p>
+                          </div>
+                        )}
+                        {property.house_price && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">House Price</p>
+                            <p className="text-base font-medium">${property.house_price.toLocaleString()}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Address */}
+                    {property.address && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Address</p>
+                        <p className="text-base break-words">{property.address}</p>
+                      </div>
+                    )}
+                    
+                    {/* Square Footage (House) */}
                     {property.size_sqft && (
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Size</p>
-                        <p className="text-base font-medium">
-                          {property.size_sqft.toLocaleString()} sq ft
-                        </p>
+                        <p className="text-xs text-muted-foreground mb-1">Square Footage</p>
+                        <p className="text-base font-medium">{property.size_sqft.toLocaleString()} sq ft</p>
                       </div>
                     )}
-                    {property.bedrooms !== null && property.bedrooms !== undefined && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Bedrooms</p>
-                        <p className="text-base font-medium">{property.bedrooms}</p>
+                    
+                    {/* Bedrooms & Baths */}
+                    {(property.bedrooms !== null && property.bedrooms !== undefined || property.baths !== null && property.baths !== undefined) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        {property.bedrooms !== null && property.bedrooms !== undefined && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Bedrooms</p>
+                            <p className="text-base font-medium">{property.bedrooms}</p>
+                          </div>
+                        )}
+                        {property.baths !== null && property.baths !== undefined && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Baths</p>
+                            <p className="text-base font-medium">{property.baths}</p>
+                          </div>
+                        )}
                       </div>
                     )}
-                    {property.baths !== null && property.baths !== undefined && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Baths</p>
-                        <p className="text-base font-medium">{property.baths}</p>
+                    
+                    {/* Garage Size & Garage Type */}
+                    {(property.garage_size !== null && property.garage_size !== undefined || property.garage_size_text) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        {property.garage_size !== null && property.garage_size !== undefined && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Garage Size</p>
+                            <p className="text-base font-medium">{property.garage_size}</p>
+                          </div>
+                        )}
+                        {property.garage_size_text && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Garage Type</p>
+                            <p className="text-base font-medium break-words">{property.garage_size_text}</p>
+                          </div>
+                        )}
                       </div>
                     )}
-                    {property.garage_size !== null && property.garage_size !== undefined && (
+                    
+                    {/* House Width & House Depth */}
+                    {(property.width || property.depth) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        {property.width && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">House Width</p>
+                            <p className="text-base break-words">{property.width}</p>
+                          </div>
+                        )}
+                        {property.depth && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">House Depth</p>
+                            <p className="text-base break-words">{property.depth}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* House Notes */}
+                    {property.power_box_location && (
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Garage</p>
-                        <p className="text-base font-medium">
-                          {property.garage_size} car{property.garage_size !== 1 ? 's' : ''}
-                        </p>
+                        <p className="text-xs text-muted-foreground mb-1">House Notes</p>
+                        <p className="text-base whitespace-pre-wrap break-words">{property.power_box_location}</p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Additional Information */}
-                {(property.subdivision_phase || property.lot || property.block || property.house_name || property.depth || property.width || property.building_setbacks || property.power_box_location) && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
-                      Additional Information
-                    </h3>
-                    <div className="space-y-3">
-                      {property.subdivision_phase && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Subdivision Phase
-                          </p>
-                          <p className="text-base">{property.subdivision_phase}</p>
-                        </div>
-                      )}
-                      {(property.lot || property.block) && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Lot / Block
-                          </p>
-                          <p className="text-base">
-                            {[property.lot, property.block].filter(Boolean).join(' / ') || '—'}
-                          </p>
-                        </div>
-                      )}
-                      {property.house_name && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            House Name
-                          </p>
-                          <p className="text-base">{property.house_name}</p>
-                        </div>
-                      )}
-                      {(property.depth || property.width) && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Depth / Width
-                          </p>
-                          <p className="text-base">
-                            {[property.depth, property.width].filter(Boolean).join(' / ') || '—'}
-                          </p>
-                        </div>
-                      )}
-                      {property.building_setbacks && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Building Setbacks
-                          </p>
-                          <p className="text-base whitespace-pre-wrap">{property.building_setbacks}</p>
-                        </div>
-                      )}
-                      {property.power_box_location && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Power Box Location
-                          </p>
-                          <p className="text-base">{property.power_box_location}</p>
-                        </div>
-                      )}
-                    </div>
+                {/* LOT INFORMATION Section */}
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lot Information</h3>
+                  
+                  <div className="space-y-3">
+                    {/* Subdivision Phase */}
+                    {property.subdivision_phase && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Subdivision Phase</p>
+                        <p className="text-base break-words">{property.subdivision_phase}</p>
+                      </div>
+                    )}
+                    
+                    {/* Lot # & Block */}
+                    {((property.lot_number || property.lot) || property.block) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        {(property.lot_number || property.lot) && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Lot #</p>
+                            <p className="text-base font-medium break-words">{property.lot_number || property.lot}</p>
+                          </div>
+                        )}
+                        {property.block && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Block</p>
+                            <p className="text-base font-medium break-words">{property.block}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Lot Width & Lot Depth */}
+                    {(property.lot_width || property.lot_depth) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        {property.lot_width && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Lot Width (feet)</p>
+                            <p className="text-base">{property.lot_width.toLocaleString()}</p>
+                          </div>
+                        )}
+                        {property.lot_depth && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Lot Depth (feet)</p>
+                            <p className="text-base">{property.lot_depth.toLocaleString()}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Feet & Acres */}
+                    {(property.square_footage || property.acres) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        {property.square_footage && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Feet</p>
+                            <p className="text-base font-medium">{property.square_footage.toLocaleString()}</p>
+                          </div>
+                        )}
+                        {property.acres && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Acres</p>
+                            <p className="text-base font-medium">{property.acres.toFixed(3)}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Lot Price */}
+                    {property.lot_price && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Lot Price</p>
+                        <p className="text-base font-medium">${property.lot_price.toLocaleString()}</p>
+                      </div>
+                    )}
+                    
+                    {/* Building Setbacks */}
+                    {property.building_setbacks && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Building Setbacks</p>
+                        <p className="text-base whitespace-pre-wrap break-words">{property.building_setbacks}</p>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
 
-                {/* Coordinates */}
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
-                    Coordinates
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Latitude: </span>
-                      <span className="font-mono">{property.lat.toFixed(6)}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Longitude: </span>
-                      <span className="font-mono">{property.lng.toFixed(6)}</span>
+                {/* ADDITIONAL INFORMATION Section */}
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Additional Information</h3>
+                  
+                  <div className="space-y-3">
+                    {/* Bullet Points */}
+                    {property.lot_info && property.lot_info.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">Lot Info</p>
+                        <ul className="space-y-1">
+                          {property.lot_info.map((item, index) => (
+                            <li key={index} className="text-base flex items-start gap-2">
+                              <span className="text-muted-foreground">•</span>
+                              <span className="break-words">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {/* Latitude & Longitude */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Latitude</p>
+                        <p className="text-base font-mono">{property.lat.toFixed(6)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Longitude</p>
+                        <p className="text-base font-mono">{property.lng.toFixed(6)}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
