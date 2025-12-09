@@ -44,6 +44,7 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [lastManuallyChanged, setLastManuallyChanged] = useState<'acres' | 'square_footage' | null>(null);
   const isCalculatingRef = useRef(false);
+  const editingPropertyIdRef = useRef<string | null>(null);
   
   // Form state for editing
   const [editForm, setEditForm] = useState({
@@ -76,8 +77,15 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
     lot_info: property.lot_info || [],
   });
 
-  // Sync form state when property prop changes (when not in edit mode)
+  // Sync form state when property prop changes
+  // IMPORTANT: If property changes while in edit mode, exit edit mode to prevent overwriting wrong property
   useEffect(() => {
+    // If property ID changed while in edit mode, exit edit mode to prevent data loss
+    if (isEditMode && editingPropertyIdRef.current !== null && property.id !== editingPropertyIdRef.current) {
+      setIsEditMode(false);
+      editingPropertyIdRef.current = null;
+    }
+    
     if (!isEditMode) {
       setCurrentCategory(property.category);
       setEditForm({
@@ -119,17 +127,17 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
       isCalculatingRef.current = true;
       if (lastManuallyChanged === 'square_footage' && editForm.square_footage) {
         const sqft = parseFloat(editForm.square_footage);
-        if (!isNaN(sqft) && sqft > 0) {
-          const calculatedAcres = (sqft / 43560).toFixed(3);
-          setEditForm(prev => ({ ...prev, acres: calculatedAcres }));
-        }
+          if (!isNaN(sqft) && sqft > 0) {
+            const calculatedAcres = (sqft / 43560).toFixed(3);
+            setEditForm(prev => ({ ...prev, acres: calculatedAcres }));
+          }
       } else if (lastManuallyChanged === 'acres' && editForm.acres) {
         const acres = parseFloat(editForm.acres);
-        if (!isNaN(acres) && acres > 0) {
-          const calculatedSqft = Math.round(acres * 43560).toString();
-          setEditForm(prev => ({ ...prev, square_footage: calculatedSqft }));
+          if (!isNaN(acres) && acres > 0) {
+            const calculatedSqft = Math.round(acres * 43560).toString();
+            setEditForm(prev => ({ ...prev, square_footage: calculatedSqft }));
+          }
         }
-      }
       setLastManuallyChanged(null);
       isCalculatingRef.current = false;
     }
@@ -215,7 +223,7 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
         lot_price: editForm.lot_price && String(editForm.lot_price).trim() ? parseFloat(String(editForm.lot_price).trim()) : null,
         house_price: editForm.house_price && String(editForm.house_price).trim() ? parseFloat(String(editForm.house_price).trim()) : null,
         garage_size_text: editForm.garage_size_text && String(editForm.garage_size_text).trim()
-          ? (isNaN(parseFloat(editForm.garage_size_text)) ? editForm.garage_size_text : parseFloat(editForm.garage_size_text))
+          ? String(editForm.garage_size_text).trim()
           : null,
         lot_info: editForm.lot_info && editForm.lot_info.length > 0 
           ? editForm.lot_info.filter((item: string) => item.trim().length > 0)
@@ -258,6 +266,7 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
       }
       
       // Exit edit mode
+      editingPropertyIdRef.current = null;
       setIsEditMode(false);
       setCurrentCategory(editForm.category);
     } catch (error) {
@@ -303,6 +312,7 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
       lot_info: property.lot_info || [],
     });
     setCurrentCategory(property.category);
+    editingPropertyIdRef.current = null;
     setIsEditMode(false);
     setUpdateError(null);
     setLastManuallyChanged(null);
@@ -334,9 +344,9 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
 
       setNotification({ type: 'success', message: 'Property deleted successfully!' });
       // Update parent state first to trigger refresh
-      if (onUpdate) {
+        if (onUpdate) {
         onUpdate({ ...property, is_deleted: true });
-      }
+        }
       setTimeout(() => {
         setNotification(null);
         onClose(); // Close the panel after refresh
@@ -513,7 +523,10 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsEditMode(true)}
+                onClick={() => {
+                  editingPropertyIdRef.current = property.id;
+                  setIsEditMode(true);
+                }}
                 className="h-8 w-8 shrink-0"
                 title="Edit property"
               >
@@ -541,29 +554,29 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                   {/* BASIC INFORMATION Section */}
                   <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase">Basic Information</h3>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-address">Address</Label>
-                      <Input
-                        id="edit-address"
-                        value={editForm.address}
-                        onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-subdivision">Subdivision Phase</Label>
-                      <Input
-                        id="edit-subdivision"
-                        value={editForm.subdivision_phase}
-                        onChange={(e) => setEditForm({ ...editForm, subdivision_phase: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-house-name">House Name</Label>
-                      <Input
-                        id="edit-house-name"
-                        value={editForm.house_name}
-                        onChange={(e) => setEditForm({ ...editForm, house_name: e.target.value })}
-                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-address">Address</Label>
+                        <Input
+                          id="edit-address"
+                          value={editForm.address}
+                          onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-subdivision">Subdivision Phase</Label>
+                        <Input
+                          id="edit-subdivision"
+                          value={editForm.subdivision_phase}
+                          onChange={(e) => setEditForm({ ...editForm, subdivision_phase: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-house-name">House Name</Label>
+                        <Input
+                          id="edit-house-name"
+                          value={editForm.house_name}
+                          onChange={(e) => setEditForm({ ...editForm, house_name: e.target.value })}
+                        />
                     </div>
                   </div>
 
@@ -607,8 +620,8 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                           type="text"
                           value={editForm.garage_size_text}
                           onChange={(e) =>
-                            setEditForm({
-                              ...editForm,
+                            setEditForm({ 
+                              ...editForm, 
                               garage_size_text: e.target.value,
                             })
                           }
@@ -742,83 +755,83 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                   {/* Additional Information Section */}
                   <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase">Additional Information</h3>
-                    <div className="space-y-2">
+                      <div className="space-y-2">
                       <Label htmlFor="edit-lot-info">Lot Info</Label>
-                      {/* Display existing bullet points */}
-                      {editForm.lot_info && editForm.lot_info.length > 0 && (
-                        <div className="space-y-2 mb-3">
-                          {editForm.lot_info.map((item, index) => (
-                            <div key={index} className="flex items-start gap-2 p-2 border rounded-md bg-gray-50">
-                              <span className="text-muted-foreground mt-1">•</span>
-                              <Input
-                                value={item}
-                                onChange={(e) => {
-                                  const updated = [...editForm.lot_info];
-                                  updated[index] = e.target.value;
-                                  setEditForm({
-                                    ...editForm,
-                                    lot_info: updated,
-                                  });
-                                }}
-                                className="flex-1 bg-white"
-                                placeholder="Enter lot information..."
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => {
-                                  const updated = editForm.lot_info.filter((_, i) => i !== index);
-                                  setEditForm({
-                                    ...editForm,
-                                    lot_info: updated,
-                                  });
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {/* Add new bullet point button */}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          setEditForm({
-                            ...editForm,
-                            lot_info: [...(editForm.lot_info || []), ''],
-                          });
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Bullet Point
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-lat">Latitude</Label>
-                        <Input
-                          id="edit-lat"
-                          type="number"
-                          step="0.000001"
-                          value={editForm.lat}
-                          onChange={(e) => setEditForm({ ...editForm, lat: e.target.value })}
-                        />
+                        {/* Display existing bullet points */}
+                        {editForm.lot_info && editForm.lot_info.length > 0 && (
+                          <div className="space-y-2 mb-3">
+                            {editForm.lot_info.map((item, index) => (
+                              <div key={index} className="flex items-start gap-2 p-2 border rounded-md bg-gray-50">
+                                <span className="text-muted-foreground mt-1">•</span>
+                                <Input
+                                  value={item}
+                                  onChange={(e) => {
+                                    const updated = [...editForm.lot_info];
+                                    updated[index] = e.target.value;
+                                    setEditForm({
+                                      ...editForm,
+                                      lot_info: updated,
+                                    });
+                                  }}
+                                  className="flex-1 bg-white"
+                                  placeholder="Enter lot information..."
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    const updated = editForm.lot_info.filter((_, i) => i !== index);
+                                    setEditForm({
+                                      ...editForm,
+                                      lot_info: updated,
+                                    });
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {/* Add new bullet point button */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => {
+                            setEditForm({
+                              ...editForm,
+                              lot_info: [...(editForm.lot_info || []), ''],
+                            });
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Bullet Point
+                        </Button>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-lng">Longitude</Label>
-                        <Input
-                          id="edit-lng"
-                          type="number"
-                          step="0.000001"
-                          value={editForm.lng}
-                          onChange={(e) => setEditForm({ ...editForm, lng: e.target.value })}
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-lat">Latitude</Label>
+                          <Input
+                            id="edit-lat"
+                            type="number"
+                            step="0.000001"
+                            value={editForm.lat}
+                            onChange={(e) => setEditForm({ ...editForm, lat: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-lng">Longitude</Label>
+                          <Input
+                            id="edit-lng"
+                            type="number"
+                            step="0.000001"
+                            value={editForm.lng}
+                            onChange={(e) => setEditForm({ ...editForm, lng: e.target.value })}
+                          />
                       </div>
                     </div>
                   </div>
@@ -841,19 +854,19 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                             <p className="text-xs text-muted-foreground mb-1">House Name</p>
                             <p className="text-base font-medium break-words">{property.house_name}</p>
                           </div>
-                        )}
+                      )}
                         {property.house_price && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">House Price</p>
                             <p className="text-base font-medium">${property.house_price.toLocaleString()}</p>
-                          </div>
-                        )}
-                      </div>
+                    </div>
+                  )}
+                </div>
                     )}
-                    
+
                     {/* Address */}
                     {property.address && (
-                      <div>
+                <div>
                         <p className="text-xs text-muted-foreground mb-1">Address</p>
                         <p className="text-base break-words">{property.address}</p>
                       </div>
@@ -870,44 +883,44 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                     {/* Bedrooms & Baths */}
                     {(property.bedrooms !== null && property.bedrooms !== undefined || property.baths !== null && property.baths !== undefined) && (
                       <div className="grid grid-cols-2 gap-4">
-                        {property.bedrooms !== null && property.bedrooms !== undefined && (
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Bedrooms</p>
-                            <p className="text-base font-medium">{property.bedrooms}</p>
-                          </div>
-                        )}
-                        {property.baths !== null && property.baths !== undefined && (
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Baths</p>
-                            <p className="text-base font-medium">{property.baths}</p>
-                          </div>
-                        )}
+                    {property.bedrooms !== null && property.bedrooms !== undefined && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Bedrooms</p>
+                        <p className="text-base font-medium">{property.bedrooms}</p>
+                      </div>
+                    )}
+                    {property.baths !== null && property.baths !== undefined && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Baths</p>
+                        <p className="text-base font-medium">{property.baths}</p>
+                      </div>
+                    )}
                       </div>
                     )}
                     
                     {/* Garage Size & Garage Type */}
                     {(property.garage_size !== null && property.garage_size !== undefined || property.garage_size_text) && (
                       <div className="grid grid-cols-2 gap-4">
-                        {property.garage_size !== null && property.garage_size !== undefined && (
-                          <div>
+                    {property.garage_size !== null && property.garage_size !== undefined && (
+                      <div>
                             <p className="text-xs text-muted-foreground mb-1">Garage Size</p>
                             <p className="text-base font-medium">{property.garage_size}</p>
-                          </div>
-                        )}
+                      </div>
+                    )}
                         {property.garage_size_text && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Garage Type</p>
                             <p className="text-base font-medium break-words">{property.garage_size_text}</p>
-                          </div>
+                  </div>
                         )}
-                      </div>
+                </div>
                     )}
-                    
+
                     {/* House Width & House Depth */}
                     {(property.width || property.depth) && (
                       <div className="grid grid-cols-2 gap-4">
                         {property.width && (
-                          <div>
+                  <div>
                             <p className="text-xs text-muted-foreground mb-1">House Width</p>
                             <p className="text-base break-words">{property.width}</p>
                           </div>
@@ -935,30 +948,30 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                 <div className="space-y-4 pt-4 border-t">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lot Information</h3>
                   
-                  <div className="space-y-3">
+                    <div className="space-y-3">
                     {/* Subdivision Phase */}
-                    {property.subdivision_phase && (
-                      <div>
+                      {property.subdivision_phase && (
+                        <div>
                         <p className="text-xs text-muted-foreground mb-1">Subdivision Phase</p>
                         <p className="text-base break-words">{property.subdivision_phase}</p>
-                      </div>
-                    )}
+                        </div>
+                      )}
                     
                     {/* Lot # & Block */}
                     {((property.lot_number || property.lot) || property.block) && (
                       <div className="grid grid-cols-2 gap-4">
                         {(property.lot_number || property.lot) && (
-                          <div>
+                        <div>
                             <p className="text-xs text-muted-foreground mb-1">Lot #</p>
                             <p className="text-base font-medium break-words">{property.lot_number || property.lot}</p>
-                          </div>
-                        )}
+                        </div>
+                      )}
                         {property.block && (
-                          <div>
+                        <div>
                             <p className="text-xs text-muted-foreground mb-1">Block</p>
                             <p className="text-base font-medium break-words">{property.block}</p>
-                          </div>
-                        )}
+                        </div>
+                      )}
                       </div>
                     )}
                     
@@ -966,44 +979,44 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                     {(property.lot_width || property.lot_depth) && (
                       <div className="grid grid-cols-2 gap-4">
                         {property.lot_width && (
-                          <div>
+                        <div>
                             <p className="text-xs text-muted-foreground mb-1">Lot Width (feet)</p>
                             <p className="text-base">{property.lot_width.toLocaleString()}</p>
-                          </div>
-                        )}
+                        </div>
+                      )}
                         {property.lot_depth && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Lot Depth (feet)</p>
                             <p className="text-base">{property.lot_depth.toLocaleString()}</p>
-                          </div>
+                    </div>
                         )}
-                      </div>
-                    )}
-                    
+                  </div>
+                )}
+
                     {/* Feet & Acres */}
                     {(property.square_footage || property.acres) && (
                       <div className="grid grid-cols-2 gap-4">
                         {property.square_footage && (
-                          <div>
+                <div>
                             <p className="text-xs text-muted-foreground mb-1">Feet</p>
                             <p className="text-base font-medium">{property.square_footage.toLocaleString()}</p>
                           </div>
                         )}
                         {property.acres && (
-                          <div>
+                    <div>
                             <p className="text-xs text-muted-foreground mb-1">Acres</p>
                             <p className="text-base font-medium">{property.acres.toFixed(3)}</p>
-                          </div>
+                    </div>
                         )}
                       </div>
                     )}
                     
                     {/* Lot Price */}
                     {property.lot_price && (
-                      <div>
+                    <div>
                         <p className="text-xs text-muted-foreground mb-1">Lot Price</p>
                         <p className="text-base font-medium">${property.lot_price.toLocaleString()}</p>
-                      </div>
+                    </div>
                     )}
                     
                     {/* Building Setbacks */}
