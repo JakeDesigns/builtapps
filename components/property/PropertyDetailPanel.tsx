@@ -604,16 +604,15 @@ export function PropertyDetailPanel({ property, onClose, onUpdate }: PropertyDet
                         <Label htmlFor="edit-garage-type">Garage Type</Label>
                         <Input
                           id="edit-garage-type"
+                          type="text"
                           value={editForm.garage_size_text}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            const numValue = parseFloat(value);
-                            setEditForm({ 
-                              ...editForm, 
-                              garage_size_text: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
-                            });
-                          }}
-                          placeholder="e.g., '2-car' or '3'"
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              garage_size_text: e.target.value,
+                            })
+                          }
+                          placeholder="e.g., 3 Car w/ RV"
                         />
                       </div>
                     </div>

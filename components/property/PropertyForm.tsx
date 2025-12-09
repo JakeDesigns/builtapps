@@ -460,16 +460,15 @@ export function PropertyForm({
                 <Label htmlFor="garage_size_text">Garage Type</Label>
                 <Input
                   id="garage_size_text"
+                  type="text"
                   value={formData.garage_size_text || ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const numValue = parseFloat(value);
-                    setFormData({ 
-                      ...formData, 
-                      garage_size_text: value === '' ? '' : (isNaN(numValue) ? value : String(numValue))
-                    });
-                  }}
-                  placeholder="text field"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      garage_size_text: e.target.value,
+                    })
+                  }
+                  placeholder="e.g., 3 Car w/ RV"
                 />
               </div>
             </div>
